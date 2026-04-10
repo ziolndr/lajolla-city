@@ -1615,10 +1615,9 @@ function newSearch(){
   document.getElementById('result').classList.remove('on');
   document.getElementById('sugs').style.display='block';
   setFilter('all');
-  scrollToSearch();
-}
 
-document.getElementById('logo').addEventListener('click',newSearch);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 /* dek doc count — auto from PRESETS */
 buildFilters();
