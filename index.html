@@ -1243,6 +1243,17 @@ body{min-height:100vh;}
   .r-support-badge{margin-top:10px;display:block;}
 }
 
+
+.loading-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  font:400 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink4);padding:8px 10px;border:1px solid var(--line);border-radius:999px;
+}
+.loading-dot{width:6px;height:6px;border-radius:999px;background:var(--ink4);opacity:.65;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:.2}50%{opacity:.9}}
+.r-summary-status{margin-top:12px}
+.cache-note{font:400 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink4)}
+
 </style>
 </head>
 <body>
@@ -1474,6 +1485,7 @@ body{min-height:100vh;}
 
 <script>
 const API = 'https://api.arbiter.traut.ai/public/compare';
+const EMBED_API = 'https://api.arbiter.traut.ai/public/embed';
 const CORPUS_URL = './corpus.json';
 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
@@ -1505,6 +1517,10 @@ const TITLE_MAP = {
   'Mayor Gloria Letter to LAFCO':'Mayor Gloria Letter to LAFCO'
 };
 
+const FILTER_PREFILTER_LIMIT = 96;
+const COUNTER_PREFILTER_LIMIT = 72;
+const CACHE_VERSION = 'v3';
+
 let activeFilter = 'all';
 let CORPUS = [];
 let DOCS = [];
@@ -1513,6 +1529,7 @@ let FILTERS = [];
 let lastClaim = '';
 let CURRENT_DOC = null;
 let LAST_RENDER = null;
+let EMBED_CACHE = new Map();
 
 function prettyTitle(raw){
   const s = String(raw || '').trim();
@@ -1523,17 +1540,13 @@ function prettyTitle(raw){
   if (/^[A-Za-z]+\d+[A-Za-z0-9\s()]*$/.test(base)) return base.replace(/([a-z])([A-Z0-9])/g, '$1 $2').trim();
   return base;
 }
-
 function canonTitle(entry){ return entry?.source || entry?.title || 'Source document'; }
-
 function parseOrdinal(entry){
   const t = String(entry?.title || '');
   const m = t.match(/—\s*(\d+)\/\d+\s*$/);
   return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
 }
-
 function cleanText(text){ return String(text || '').replace(/\s+/g, ' ').trim(); }
-
 function truncateSmart(raw, maxLen){
   const t = cleanText(raw);
   if (t.length <= maxLen) return t;
@@ -1542,17 +1555,10 @@ function truncateSmart(raw, maxLen){
   if (last > maxLen * 0.55) cut = cut.slice(0, last + 1);
   return cut.trim() + '…';
 }
-
-function scoreBand(score){
-  if (score >= 0.8) return 'strong';
-  if (score >= 0.65) return 'meaningful';
-  if (score >= 0.45) return 'partial';
-  return 'weak';
-}
 function scoreStrength(score){
-  if (score >= 0.8) return 'The record strongly supports this claim';
-  if (score >= 0.65) return 'The record meaningfully supports this claim';
-  if (score >= 0.45) return 'The record partially supports this claim';
+  if (score >= 0.8) return 'The highest-coherence passages strongly support this claim';
+  if (score >= 0.65) return 'The highest-coherence passages meaningfully support this claim';
+  if (score >= 0.45) return 'The highest-coherence passages partially support this claim';
   return 'Support in the current record is weak';
 }
 function scoreCompact(score){
@@ -1561,7 +1567,6 @@ function scoreCompact(score){
   if (score >= 0.45) return 'Partial support';
   return 'Weak support';
 }
-
 function buildDocIndex(){
   const bySource = new Map();
   for (const item of CORPUS){
@@ -1584,7 +1589,6 @@ function buildDocIndex(){
   });
   DOC_INDEX = new Map(DOCS.map(d => [d.id, d]));
 }
-
 function buildFiltersFromCorpus(){
   const counts = new Map();
   for (const item of CORPUS){
@@ -1594,7 +1598,6 @@ function buildFiltersFromCorpus(){
   FILTERS = [...counts.entries()].map(([id, count]) => ({ id, label:id, count }))
     .sort((a,b) => a.label.localeCompare(b.label));
 }
-
 function buildFilters(){
   const wrap = document.getElementById('filters');
   const total = CORPUS.length;
@@ -1605,13 +1608,11 @@ function buildFilters(){
   });
   wrap.innerHTML = out;
 }
-
 function setFilter(id){
   activeFilter = id;
   document.querySelectorAll('.filt').forEach(b => b.classList.toggle('on', b.dataset.id === id));
   buildSugs();
 }
-
 function buildSugs(){
   const list = document.getElementById('sug-list');
   let pool = [...DEFAULT_CLAIMS];
@@ -1626,17 +1627,11 @@ function buildSugs(){
     `<div class="sug-row" onclick="setQ(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}<span class="sug-row-arrow">→</span></div>`
   ).join('');
 }
-
-function setQ(q){
-  document.getElementById('q').value = q;
-  go();
-}
-
+function setQ(q){ document.getElementById('q').value = q; go(); }
 function activeCorpus(){
   if (activeFilter === 'all') return CORPUS;
   return CORPUS.filter(d => (d.cat || 'Uncategorized') === activeFilter);
 }
-
 async function loadCorpus(){
   try{
     const r = await fetch(CORPUS_URL, { cache:'no-store' });
@@ -1666,9 +1661,6 @@ async function loadCorpus(){
     if (filters) filters.innerHTML = '';
   }
 }
-
-function makeCandidateText(item){ return cleanText(item.text || ''); }
-
 function claimToCounterPrompts(claim){
   const base = cleanText(claim);
   return [
@@ -1677,16 +1669,15 @@ function claimToCounterPrompts(claim){
     `What evidence in the record argues the opposite of this claim: ${base}`
   ];
 }
-
 function summarizeResult(top, counters, others){
   const topScore = top.score;
   const bestCounter = counters[0]?.score ?? 0;
   const spread = (topScore - bestCounter);
   let line1 = scoreStrength(topScore) + '.';
   if (bestCounter > 0.7 && spread < 0.08) {
-    line1 += ' Counter-evidence is also substantial, so the record remains contested.';
+    line1 += ' Counter-evidence also scores highly, so the record remains contested.';
   } else if (bestCounter > 0.62) {
-    line1 += ' There is meaningful counter-evidence, but it is weaker than the leading support.';
+    line1 += ' Counter-evidence is meaningful, but weaker than the leading support.';
   } else {
     line1 += ' Counter-evidence is present, but materially weaker than the leading support.';
   }
@@ -1697,16 +1688,8 @@ function summarizeResult(top, counters, others){
                       topScore >= 0.65 ? 'Meaningful primary support' :
                       topScore >= 0.45 ? 'Partial primary support' : 'Weak primary support';
   const variance = others.length ? (topScore - (others[Math.min(2, others.length-1)]?.score ?? topScore)) : 0;
-  return {
-    line1,
-    supportType,
-    tension,
-    spread,
-    variance,
-    bestCounter
-  };
+  return { line1, supportType, tension, spread, variance, bestCounter };
 }
-
 function dedupeBySource(results, limit=5){
   const out=[], seen=new Set();
   for(const r of results){
@@ -1718,7 +1701,6 @@ function dedupeBySource(results, limit=5){
   }
   return out;
 }
-
 function buildContextWindow(doc, matchIdx){
   if (!doc?.items?.length) return {match:'', context:''};
   const idx = Math.max(0, matchIdx);
@@ -1730,16 +1712,79 @@ function buildContextWindow(doc, matchIdx){
     context: truncateSmart([prev, next].filter(Boolean).join(' '), 360)
   };
 }
-
+function cosine(a,b){
+  let dot=0,na=0,nb=0;
+  const n=Math.min(a.length,b.length);
+  for(let i=0;i<n;i++){ const x=a[i], y=b[i]; dot+=x*y; na+=x*x; nb+=y*y; }
+  if(!na || !nb) return 0;
+  return dot / (Math.sqrt(na)*Math.sqrt(nb));
+}
+async function embedText(text){
+  const key = cleanText(text);
+  if (EMBED_CACHE.has(key)) return EMBED_CACHE.get(key);
+  const r = await fetch(EMBED_API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ text: key })
+  });
+  if(!r.ok) throw new Error('EMBED API ' + r.status);
+  const d = await r.json();
+  const vec = d.vector || d.embedding || d.data?.[0]?.embedding || d.data?.[0]?.vector;
+  if(!Array.isArray(vec)) throw new Error('Embed response missing vector');
+  EMBED_CACHE.set(key, vec);
+  return vec;
+}
+function prefilterDocsByVector(queryVec, docs, limit){
+  const scored = docs.map(doc => ({ doc, sim: Array.isArray(doc.vector) ? cosine(queryVec, doc.vector) : -2 }))
+                     .sort((a,b)=>b.sim-a.sim);
+  const top = scored.slice(0, Math.min(limit, scored.length)).map(x=>x.doc);
+  // if many docs missing vectors, top may be bad; backfill from original docs order
+  if (top.length < Math.min(limit, docs.length)){
+    const seen = new Set(top.map(d=>d.__id));
+    for(const d of docs){
+      if(seen.has(d.__id)) continue;
+      top.push(d);
+      if(top.length>=Math.min(limit, docs.length)) break;
+    }
+  }
+  return top;
+}
+function cacheKey(claim, filter){ return `${CACHE_VERSION}::${filter}::${cleanText(claim)}`; }
+function saveCache(key, payload){
+  try{ localStorage.setItem(key, JSON.stringify({ts:Date.now(), payload})); }catch(e){}
+}
+function loadCache(key){
+  try{
+    const raw = localStorage.getItem(key);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.payload || null;
+  }catch(e){ return null; }
+}
+function reviveResults(payloadSection){
+  return (payloadSection || []).map(r => {
+    const hit = CORPUS.find(x => x.__id === r.hitId) || {__id:r.hitId,text:r.chunk,cat:r.cat,source:r.source,title:r.title};
+    const doc = DOC_INDEX.get(r.docId) || {
+      id:r.docId, title:r.docTitle, source:r.source, corpusLabel:r.cat, body:r.docBody || r.chunk, items:[hit]
+    };
+    return { doc, hit, chunk:r.chunk, score:r.score, matchIdx:r.matchIdx || 0 };
+  });
+}
+function serializeResults(list){
+  return (list || []).map(r => ({
+    docId:r.doc.id, docTitle:r.doc.title, docBody:r.doc.body?.slice(0,4000) || '',
+    hitId:r.hit.__id, chunk:r.chunk, score:r.score, matchIdx:r.matchIdx || 0,
+    cat:r.hit.cat || r.doc.corpusLabel, source:r.hit.source || r.doc.source, title:r.hit.title || r.doc.title
+  }));
+}
 async function compareClaim(query, docs, limit=12){
-  const candidates = docs.map(makeCandidateText);
+  const candidates = docs.map(d => cleanText(d.text));
   const textMap = new Map();
   docs.forEach((doc, idx) => {
     const t = candidates[idx];
     if (!textMap.has(t)) textMap.set(t, []);
     textMap.get(t).push(doc);
   });
-
   const r = await fetch(API, {
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
@@ -1748,7 +1793,6 @@ async function compareClaim(query, docs, limit=12){
   if (!r.ok) throw new Error('API ' + r.status);
   const d = await r.json();
   const ranked = (d.all || d.results || []).slice().sort((a,b) => b.score - a.score);
-
   const results = [];
   const seenPassages = new Set();
   for (const item of ranked){
@@ -1771,55 +1815,6 @@ async function compareClaim(query, docs, limit=12){
   }
   return results;
 }
-
-async function go(){
-  const q = document.getElementById('q').value.trim();
-  if (!q || !CORPUS.length) return;
-  lastClaim = q;
-  await runClaim(q, q, { preserveResult:false });
-}
-
-async function runClaim(fullClaim, displayClaim, opts={}){
-  const preserveResult = !!opts.preserveResult;
-  document.getElementById('sugs').style.display = 'none';
-  const resultEl = document.getElementById('result');
-  if (preserveResult){
-    resultEl.classList.add('on');
-    resultEl.innerHTML = '<div class="r-card"><div class="r-tag">Testing claim</div><div class="r-title">'+esc(displayClaim)+'</div><div class="r-passage">Re-scoring the record through ARBITER…</div></div>';
-  } else {
-    resultEl.classList.remove('on');
-  }
-  const loading = document.getElementById('loading');
-  loading.classList.add('on');
-
-  const docs = activeCorpus();
-  document.getElementById('loading-count').textContent = docs.length + ' passages';
-  const t0 = performance.now();
-
-  try{
-    const supportResults = await compareClaim(fullClaim, docs, 14);
-    const counterQueries = claimToCounterPrompts(fullClaim);
-    let counterPool = [];
-    for (const cq of counterQueries){
-      const cr = await compareClaim(cq, docs, 8);
-      counterPool = counterPool.concat(cr);
-    }
-
-    // Remove the primary winning passage/doc from counter pool when possible
-    const top = supportResults[0];
-    const counterResults = dedupeBySource(counterPool.filter(x => !(top && x.doc.id === top.doc.id && x.hit.__id === top.hit.__id)), 5);
-    const supportingElse = dedupeBySource(supportResults.slice(1), 5);
-    const ms = Math.round(performance.now() - t0);
-
-    renderClaim(displayClaim, top, supportingElse, counterResults, ms, docs.length);
-  } catch(e){
-    resultEl.innerHTML = `<div class="err">${esc(e.message)}</div>`;
-    resultEl.classList.add('on');
-  } finally {
-    loading.classList.remove('on');
-  }
-}
-
 function renderRows(rows, kind){
   if (!rows.length) return '';
   const avg = (rows.reduce((a,b)=>a+b.score,0)/rows.length).toFixed(3);
@@ -1839,18 +1834,27 @@ function renderRows(rows, kind){
       </div>
     `).join('') + '</div>';
 }
-
-function renderClaim(displayClaim, top, supportingElse, counterResults, ms, total){
+function renderProgressiveShell(displayClaim){
+  const r=document.getElementById('result');
+  r.innerHTML =
+    '<button class="r-back" onclick="newSearch()">← New search</button>' +
+    '<div class="r-q"><span class="r-q-lbl">Claim</span><span class="r-q-val">'+esc(displayClaim)+'</span></div>' +
+    '<div class="r-summary">' +
+      '<div class="r-summary-head">Record synthesis</div>' +
+      '<div class="loading-pill"><span class="loading-dot"></span><span>Evaluating support, counter-evidence, and trust signals</span></div>' +
+      '<div class="r-summary-status cache-note" id="progress-note">Running staged retrieval to narrow the record before authoritative compare…</div>' +
+    '</div>';
+  r.classList.add('on');
+}
+function renderClaim(displayClaim, top, supportingElse, counterResults, ms, total, cached=false, prefilteredCount=0){
   const r = document.getElementById('result');
   if (!top){
     r.innerHTML = '<div class="err">Nothing found. Try restating the claim more concretely.</div>';
     r.classList.add('on');
     return;
   }
-
   const windowed = buildContextWindow(top.doc, top.matchIdx);
   const synthesis = summarizeResult(top, counterResults, supportingElse);
-
   CURRENT_DOC = {
     doc: top.doc,
     hit: top.hit,
@@ -1869,9 +1873,10 @@ function renderClaim(displayClaim, top, supportingElse, counterResults, ms, tota
         '<div class="r-summary-points">' +
           '<div class="r-point"><div class="r-point-k">Primary signal</div><div class="r-point-v">'+esc(synthesis.supportType)+'</div></div>' +
           '<div class="r-point"><div class="r-point-k">Key tension</div><div class="r-point-v">'+esc(synthesis.tension)+'</div></div>' +
-          '<div class="r-point"><div class="r-point-k">Trust signals</div><div class="r-point-v">'+total+' passages evaluated · support/counter spread '+synthesis.spread.toFixed(3)+' · top-three variance '+synthesis.variance.toFixed(3)+'</div></div>' +
+          '<div class="r-point"><div class="r-point-k">Trust signals</div><div class="r-point-v">'+total+' passages loaded · '+prefilteredCount+' compared per pass · support/counter spread '+synthesis.spread.toFixed(3)+' · top-three variance '+synthesis.variance.toFixed(3)+'</div></div>' +
         '</div>' +
       '</div>' +
+      '<div class="r-summary-status"><span class="cache-note">'+(cached ? 'Loaded from local cache' : 'Fresh compare run')+'</span></div>' +
     '</div>' +
     '<div class="r-card">' +
       '<div class="r-tag">'+esc(top.hit.cat || top.doc.corpusLabel || 'Source')+'</div>' +
@@ -1887,10 +1892,10 @@ function renderClaim(displayClaim, top, supportingElse, counterResults, ms, tota
       (windowed.context ? '<div class="r-context"><div class="r-context-lbl">Context from source</div><div class="r-context-text">'+esc(windowed.context)+'</div></div>' : '') +
       '<div class="r-meta">' +
         '<div class="r-score"><div class="r-score-num" id="snum">0.000</div><div class="r-score-lbl">Coherence</div></div>' +
-        '<div class="r-meta-dots"><span>'+ms+'ms</span> · <span>'+total+' passages</span> · <span>ARBITER compare</span></div>' +
+        '<div class="r-meta-dots"><span>'+ms+'ms</span> · <span>'+total+' passages loaded</span> · <span>'+prefilteredCount+' compared / pass</span></div>' +
       '</div>' +
       '<div class="r-actions">' +
-        '<button type="button" class="r-open" onclick="openDoc(top=true)">Open source document</button>' +
+        '<button type="button" class="r-open" onclick="openDoc(false)">Open source document</button>' +
         '<button type="button" class="r-full" onclick="openDoc(true)">View full document →</button>' +
       '</div>' +
     '</div>' +
@@ -1915,7 +1920,74 @@ function renderClaim(displayClaim, top, supportingElse, counterResults, ms, tota
   r.classList.add('on');
   animScore(top.score);
 }
+async function go(){
+  const q = document.getElementById('q').value.trim();
+  if (!q || !CORPUS.length) return;
+  lastClaim = q;
+  await runClaim(q, q, { preserveResult:false });
+}
+async function runClaim(fullClaim, displayClaim, opts={}){
+  const preserveResult = !!opts.preserveResult;
+  document.getElementById('sugs').style.display = 'none';
+  const resultEl = document.getElementById('result');
+  if (!preserveResult) resultEl.classList.remove('on');
+  renderProgressiveShell(displayClaim);
+  const loading = document.getElementById('loading');
+  loading.classList.add('on');
 
+  const allDocs = activeCorpus();
+  const ckey = cacheKey(fullClaim, activeFilter);
+  const cached = loadCache(ckey);
+  if (cached){
+    const top = reviveResults(cached.top)[0];
+    const supportingElse = reviveResults(cached.supportingElse);
+    const counterResults = reviveResults(cached.counterResults);
+    renderClaim(displayClaim, top, supportingElse, counterResults, cached.ms, allDocs.length, true, cached.prefilteredCount || 0);
+    loading.classList.remove('on');
+    return;
+  }
+
+  const t0 = performance.now();
+  try{
+    document.getElementById('loading-count').textContent = allDocs.length + ' passages';
+    const qVec = await embedText(fullClaim);
+    const supportCandidates = prefilterDocsByVector(qVec, allDocs, FILTER_PREFILTER_LIMIT);
+    const supportPromise = compareClaim(fullClaim, supportCandidates, 14);
+    document.getElementById('progress-note').textContent = `Primary claim narrowed from ${allDocs.length} passages to ${supportCandidates.length}, then sent to compare…`;
+
+    const counterQueries = claimToCounterPrompts(fullClaim);
+    const counterPrepPromises = counterQueries.map(async cq => {
+      const vec = await embedText(cq);
+      const narrowed = prefilterDocsByVector(vec, allDocs, COUNTER_PREFILTER_LIMIT);
+      return { cq, narrowed };
+    });
+    const counterPrepared = await Promise.all(counterPrepPromises);
+    document.getElementById('progress-note').textContent = `Counter-evidence prompts narrowed to ${COUNTER_PREFILTER_LIMIT} passages each. Running compare calls in parallel…`;
+
+    const counterComparePromises = counterPrepared.map(p => compareClaim(p.cq, p.narrowed, 8));
+    const [supportResults, ...counterArrays] = await Promise.all([supportPromise, ...counterComparePromises]);
+
+    const counterPool = counterArrays.flat();
+    const top = supportResults[0];
+    const counterResults = dedupeBySource(counterPool.filter(x => !(top && x.doc.id === top.doc.id && x.hit.__id === top.hit.__id)), 5);
+    const supportingElse = dedupeBySource(supportResults.slice(1), 5);
+    const ms = Math.round(performance.now() - t0);
+
+    renderClaim(displayClaim, top, supportingElse, counterResults, ms, allDocs.length, false, supportCandidates.length);
+    saveCache(ckey, {
+      top: serializeResults([top]),
+      supportingElse: serializeResults(supportingElse),
+      counterResults: serializeResults(counterResults),
+      ms,
+      prefilteredCount: supportCandidates.length
+    });
+  } catch(e){
+    resultEl.innerHTML = `<div class="err">${esc(e.message)}</div>`;
+    resultEl.classList.add('on');
+  } finally {
+    loading.classList.remove('on');
+  }
+}
 function animScore(target){
   const el = document.getElementById('snum');
   if (!el) return;
@@ -1927,14 +1999,12 @@ function animScore(target){
     if (t < 1) requestAnimationFrame(tick); else el.textContent = target.toFixed(3);
   })(performance.now());
 }
-
 function stripAnglePrefix(text){
   return (text || '').trim()
     .replace(/\s+As\s+(a|an)\s+[^,?.!]+$/i, '')
     .replace(/^As\s+(a|an|the)\s+[^,]+,\s*/i, '')
     .trim();
 }
-
 function applyAngle(role){
   const input = document.getElementById('rerunQ');
   if (!input) return;
@@ -1944,7 +2014,6 @@ function applyAngle(role){
   input.focus();
   input.setSelectionRange(input.value.length, input.value.length);
 }
-
 function rerun(){
   const input = document.getElementById('rerunQ');
   if (!input) return;
@@ -1954,7 +2023,6 @@ function rerun(){
   if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
   runClaim(fullQ, fullQ, { preserveResult:true }).then(() => window.scrollTo(0, y));
 }
-
 function docHtml(body, passage, full){
   const safeBody = esc(body || '');
   const safePass = esc((passage || '').trim());
@@ -1963,7 +2031,6 @@ function docHtml(body, passage, full){
   if (idx < 0) return safeBody;
   return safeBody.slice(0, idx) + '<span id="doc-pass" class="doc-pass">' + safePass + '</span>' + safeBody.slice(idx + safePass.length);
 }
-
 function openDoc(full=false){
   if (!CURRENT_DOC || !CURRENT_DOC.doc) return;
   document.getElementById('doc-kicker').textContent = CURRENT_DOC.hit?.cat || CURRENT_DOC.doc.corpusLabel || 'Source document';
@@ -2000,7 +2067,6 @@ function openDoc(full=false){
     });
   }
 }
-
 function jumpDocPassage(hitId){
   if (!CURRENT_DOC?.doc?.items?.length) return;
   const idx = CURRENT_DOC.doc.items.findIndex(x => x.__id === hitId);
@@ -2013,7 +2079,6 @@ function jumpDocPassage(hitId){
     if (el) el.scrollIntoView({block:'center'});
   });
 }
-
 function openOtherDocByGroup(kind, idx){
   if (!LAST_RENDER) return;
   const list = kind === 'counter' ? LAST_RENDER.counterResults : LAST_RENDER.supportingElse;
@@ -2027,7 +2092,6 @@ function openOtherDocByGroup(kind, idx){
   };
   openDoc(false);
 }
-
 function newSearch(){
   document.getElementById('q').value = '';
   document.getElementById('result').classList.remove('on');
@@ -2035,12 +2099,10 @@ function newSearch(){
   setFilter('all');
   window.scrollTo({top:0, behavior:'smooth'});
 }
-
 document.getElementById('logo').addEventListener('click', (e) => {
   e.preventDefault();
   newSearch();
 });
-
 window.addEventListener('keydown', e => { if (e.key === 'Escape') closeDoc(); });
 function closeDoc(){
   const modal = document.getElementById('doc-modal');
@@ -2053,7 +2115,6 @@ document.addEventListener('click', e => {
   const modal = document.getElementById('doc-modal');
   if (modal && e.target === modal) closeDoc();
 });
-
 loadCorpus();
 </script>
 
