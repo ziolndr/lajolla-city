@@ -1262,366 +1262,435 @@ body{min-height:100vh;}
 </div>
 
 <script>
-const API='https://api.arbiter.traut.ai/public/compare';
-const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const API = 'https://api.arbiter.traut.ai/public/compare';
+const CORPUS_URL = './corpus.json';
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-const PRESETS=[
-  {id:'lafco',label:'LAFCO & Incorporation',questions:['What is the minimum population required for a new city incorporation in California?','What are the LAFCO criteria for approving a cityhood petition?','How long does the incorporation process typically take from petition to election?','What fiscal analysis is required before LAFCO approves incorporation?','What percentage of registered voters must sign the incorporation petition?','Can La Jolla incorporate as a charter city rather than a general law city?'],docs:[
-    {id:'l0',title:'ACLJ Current Status — Verified Timeline April 2026',body:"ASSOCIATION FOR THE CITY OF LA JOLLA — CURRENT STATUS\n\nThis document reflects publicly verifiable information as of April 2026. Every claim below is sourced from Voice of San Diego, Times of San Diego, La Jolla Light, lajolla.ca, cityoflajolla.org, or official LAFCO and City of San Diego statements.\n\nCURRENT PHASE\nLAFCO is conducting an independent Comprehensive Fiscal Analysis (CFA) of the proposed City of La Jolla. The CFA began in January 2026 and is expected to take 6 to 9 months. ACLJ still needs approximately $200,000 to complete the final fiscal analysis phase per ACLJ President Diane Kane (January 2026). Target election ballot: November 2028.\n\nKEY MILESTONES\nSeptember 2021: ACLJ founding members begin meeting weekly to research feasibility.\nAugust 2022: ACLJ incorporates as a 501(c)(6) nonprofit.\n2023-2024: Richard Berkson (Berkson Associates, urban economist) is commissioned to conduct a Preliminary Comprehensive Fiscal Analysis (PCFA). Cost: $60,000, funded by community donations.\nSeptember 2024: PCFA results revealed at first public meeting. Finding: La Jolla generates $83.8M in revenue for the City of San Diego while costing $74.8M in services. Net surplus: approximately $9M.\nDecember 2024: ACLJ submits over 9,000 petition signatures. The San Diego County Registrar of Voters verifies 6,523 — short of the required 6,750 (25% of registered voters in the proposed territory).\nApril 29, 2025: LAFCO Executive Officer Keene Simonds, acting under statutory discretion, validates 240 additional signatures that the ROV had rejected for minor misspellings, nonstandard abbreviations, or legibility issues. LAFCO certifies 6,772 total — 22 above the threshold. Application formally accepted.\nMay 2025: San Diego Mayor Todd Gloria calls the LAFCO certification 'outrageous.' San Diego City Council authorizes litigation against LAFCO in closed session May 12.\nJune 2025: City of San Diego files lawsuit in San Diego Superior Court seeking rescission of the Certificate of Sufficiency.\nAugust 25, 2025: ACLJ files an anti-SLAPP motion arguing the city's lawsuit is 'a meritless attempt to obstruct democratic participation and silence a public-interest effort through costly litigation.'\nSeptember 2025: ACLJ files a counter-suit against the City of San Diego.\nOctober 24, 2025: Superior Court Judge Judy S. Bae rules in favor of ACLJ, finding that the city's lawsuit violated California anti-SLAPP laws. LAFCO confirmed as acting within its statutory authority.\nJanuary 2026: LAFCO begins the independent Comprehensive Fiscal Analysis (CFA). Expected duration: 6 to 9 months.\nJanuary-February 2026: City of San Diego informs ACLJ it will NOT appeal Judge Bae's ruling. The legal challenge is closed.\nMarch 26, 2026: Jack McGrory — former San Diego City Manager (March 1991 to August 1997) — joins ACLJ as Chief Negotiator and Strategic Advisor.\n\nPROPOSED BOUNDARIES\nFrom Pacific Beach north to Del Mar. From the Pacific Ocean east to Interstate 5. UC San Diego state land excluded. Approximately 46,000 residents.\n\nFINANCIAL SNAPSHOT (PCFA findings, Berkson 2024)\nLa Jolla revenue generated for San Diego: $83.8 million annually.\nSan Diego service cost for La Jolla: $74.8 million annually.\nNet surplus: approximately $9 million.\n\nNEXT STEPS\n1. LAFCO completes the independent Comprehensive Fiscal Analysis, expected to finish in 2026.\n2. If CFA is favorable, LAFCO holds public hearings.\n3. If LAFCO approves, the cityhood question goes to a DOUBLE election: a majority of La Jolla voters AND a majority of all San Diego voters must approve.\n4. Target ballot: November 2028."},
-    {id:'l1',title:'California Government Code — Municipal Incorporation Requirements',body:"GOVERNMENT CODE SECTION 56700-56701\nA proposal for incorporation shall not be approved unless the commission finds that the territory proposed to be incorporated meets all of the following criteria:\n\n(a) The territory has a population of at least 500 persons.\n(b) The territory is contiguous.\n(c) The proposed city will have sufficient revenue to provide municipal services.\n\nSECTION 56720 — LAFCO REVIEW CRITERIA\nIn reviewing a proposal for incorporation, the commission shall consider all of the following:\n1. Population and population density\n2. Land area and land use\n3. Assessed valuation\n4. Topography, natural boundaries, and drainage basins\n5. Proximity to other populated areas\n6. The likelihood of significant growth in the area\n7. Any applicable general or specific plan of any county or city\n8. The present cost and adequacy of governmental services and controls\n9. The effect of the proposed incorporation on the local government structure\n\nSECTION 56750 — FISCAL ANALYSIS REQUIREMENT\nPrior to any action on a proposal for incorporation, the commission shall require a fiscal analysis. The fiscal analysis shall include all of the following:\n(a) An identification of all revenues that would be received by the proposed city\n(b) An identification of all expenditures required to provide municipal services\n(c) A determination of whether the proposed city would be fiscally viable\n(d) An analysis of the fiscal impact on affected agencies\n\nLa Jolla LAFCO Context: La Jolla is a community of approximately 46,000 residents within the City of San Diego. A LAFCO petition for La Jolla incorporation would require signatures from 25% of registered voters in the proposed territory."},
-    {id:'l2',title:'LAFCO Petition Process — Step by Step',body:"PETITION PHASE\nStep 1: Proponents file a Notice of Intention (NOI) with LAFCO describing the proposed incorporation boundaries and services.\n\nStep 2: LAFCO determines the petition requirement — typically 25% of registered voters within the proposed territory, or landowners representing 25% of assessed value.\n\nStep 3: Proponents have 180 days to collect signatures.\n\nStep 4: LAFCO verifies signatures with the county registrar.\n\nStep 5: If signatures are sufficient, LAFCO conducts an Initial Study under CEQA.\n\nPROCESSING PHASE (12-18 months typical)\nLAFCO staff prepares a comprehensive Municipal Service Review (MSR) covering water, sewer, fire, police, roads, parks, libraries.\n\nPUBLIC HEARING PHASE\nLAFCO holds minimum two public hearings. Written protests may be filed. If written protests are received from more than 50% of registered voters OR landowners representing more than 50% of assessed value, the incorporation is terminated.\n\nELECTION PHASE\nIf LAFCO approves, a special election is held. Simple majority approves incorporation. Simultaneous election for first city council.\n\nTYPICAL TIMELINE: 3-5 years from petition filing to election."},
-    {id:'l3',title:'Fiscal Neutrality Standard — LAFCO Analysis',body:"FISCAL NEUTRALITY REQUIREMENT\nCalifornia Government Code Section 56815 requires that LAFCO find incorporation proposals 'fiscally neutral' — meaning the new city must be able to provide municipal services at current service levels without reducing services or raising taxes beyond current levels.\n\nREVENUE SOURCES FOR A NEW CITY OF LA JOLLA\nProperty Tax: Under AB 8 (1979), a new city receives a negotiated share of property tax from the county. Typical new city share: 7-15% of 1% of assessed value.\n\nSales Tax: A new city receives 1% of taxable sales within its boundaries (Bradley-Burns). La Jolla retail sales estimated $800M annually — potential $8M/year.\n\nTransient Occupancy Tax (TOT): Hotel and short-term rental taxes stay with the city.\n\nLa Jolla Projection: With assessed value exceeding $20B and significant retail/tourism revenue, independent fiscal analysts have projected La Jolla could sustain a city budget of $40-60M annually."},
-    {id:'l4',title:'Incorporation Opposition — Common LAFCO Denial Grounds',body:"MOST COMMON GROUNDS FOR LAFCO DENIAL\n\n1. FISCAL VIABILITY CONCERNS\nLAFCO denied the Kearny Mesa incorporation in 2019 citing inability to fund adequate public safety services. Fiscal viability is the single most common reason for LAFCO denial.\n\n2. SERVICE ADEQUACY\nLAFCO requires that all services currently provided by the county or existing city be maintained at current levels.\n\n3. BOUNDARY DISPUTES\nProposed boundaries that exclude significant commercial areas while including residential areas are frequently challenged.\n\n4. WRITTEN PROTEST THRESHOLD\nIf more than 50% protest, the incorporation is terminated without election."}
-  ]},
-  {id:'coastal',label:'Coastal & Development',questions:['What permits are required for development within the coastal zone in La Jolla?','How does Coastal Commission authority interact with city planning authority?','Can a new city of La Jolla adopt stricter coastal development standards than the state?','How does UCSD coastal property affect La Jolla incorporation boundaries?'],docs:[
-    {id:'c1',title:'California Coastal Act — Key Provisions for La Jolla',body:"COASTAL ACT AUTHORITY\nThe California Coastal Commission has jurisdiction over development within the coastal zone. In La Jolla, the coastal zone extends approximately 1,000 yards inland from the mean high tide line, encompassing most of the village, Bird Rock, and the cliffs.\n\nCOASTAL DEVELOPMENT PERMIT (CDP) REQUIREMENTS\nAny development within the coastal zone requires a CDP. 'Development' includes new construction, additions over 10% of existing structure, grading or land clearing, change of use, subdivision of land.\n\nFor a new City of La Jolla: After incorporation, the city may apply to the Coastal Commission for a Local Coastal Program (LCP) certification. A certified LCP allows the city to issue CDPs locally rather than through the Coastal Commission.\n\nLCP CERTIFICATION PROCESS\n1. City adopts Local Coastal Program (LUP + IP)\n2. Submit to Coastal Commission for review\n3. Commission holds public hearing\n4. Commission certifies with or without suggested modifications\n\nA new City of La Jolla would need to adopt and certify its own LCP — estimated 2-3 year process after incorporation."},
-    {id:'c2',title:'UCSD and Salk Institute — Institutional Land Issues',body:"UCSD LAND STATUS\nUCSD occupies approximately 2,000 acres in La Jolla. As a state institution, UCSD land is exempt from local zoning and land use regulations. Importantly, UCSD land is NOT subject to LAFCO jurisdiction and cannot be included in the incorporated boundaries of a new city.\n\nUCSD's annual economic impact on San Diego: $12.8 billion.\n\nSALK INSTITUTE STATUS\nThe Salk Institute is a 501(c)(3) nonprofit on approximately 27 acres of land originally donated by the City of San Diego. The land is subject to deed restrictions requiring its use for biological research. Salk land CAN be included in La Jolla incorporation boundaries but is exempt from property taxes.\n\nINCORPORATION BOUNDARY CONSIDERATIONS\nLa Jolla incorporation boundary must be carefully drawn to:\n1. Exclude UCSD state land (cannot be incorporated)\n2. Include maximum taxable commercial and residential property\n3. Create contiguous territory\n4. Address the Torrey Pines State Reserve boundary question"},
-    {id:'c3',title:'Coastal Development Permit Process — Timeline and Requirements',body:"CDP APPLICATION REQUIREMENTS\nFor residential projects within the La Jolla coastal zone the application requires a completed CDP form, project description and plans, site plan showing coastal zone boundary, photographs, geotechnical report for bluff/beach properties, biological survey if sensitive habitat present, and archaeological survey for ground-disturbing work.\n\nFEES\n- Coastal Commission: $2,000-$50,000 depending on project value\n- City of San Diego processing: $500-$15,000\n\nTIMELINE (current, under City of San Diego)\n- Application deemed complete: 30 days\n- City staff review: 45-60 days\n- Decision: 75-90 days total for minor CDP\n\nUNDER A NEW CITY OF LA JOLLA (post-LCP certification)\nThe city could streamline the CDP process to reduce review time to 45-60 days total, hire dedicated coastal planning staff, create expedited pathway for routine remodels."}
-  ]},
-  {id:'charters',label:'Comparable City Charters',questions:['How does Del Mar structure its city council and mayor relationship?','What services does Coronado contract out versus provide directly?','How does Malibu handle coastal development permitting?','How do comparable cities fund their police services?'],docs:[
-    {id:'ch1',title:'City of Del Mar — Charter and Governance Structure',body:"CITY OF DEL MAR — KEY FACTS\nIncorporated: 1959\nPopulation: 4,200\nArea: 1.8 square miles\nAnnual Budget: $22 million\nForm of government: Council-Manager\n\nGOVERNANCE STRUCTURE\nDel Mar operates under a 5-member city council with a rotating mayor (mayor selected annually by council vote). The city manager is appointed by council and serves as chief administrative officer.\n\nDel Mar is a general law city (not charter). The city council has 5 members elected at-large to 4-year staggered terms.\n\nCONTRACTED SERVICES\nDel Mar contracts the following services:\n- Police: San Diego County Sheriff (contract cost: $4.2M/year)\n- Fire: San Diego County Fire (contract cost: $2.8M/year)\n- Public Works: Partially contracted, partially in-house\n- Legal: City Attorney contract (not in-house)\n\nLESSONS FOR LA JOLLA\nDel Mar's contract service model has kept costs low. La Jolla at 46,000 residents would have significantly more leverage to negotiate competitive contracts for police and fire."},
-    {id:'ch2',title:'City of Coronado — Charter City Model',body:"CITY OF CORONADO — KEY FACTS\nIncorporated: 1890\nPopulation: 24,000\nArea: 8.8 square miles\nAnnual Budget: $68 million\nForm of government: Council-Manager (Charter City)\n\nCHARTER CITY ADVANTAGES\nCoronado operates as a charter city, giving it greater flexibility than general law cities: can set its own election rules, can establish its own purchasing and contracting procedures, can set prevailing wage requirements independently, can structure city council compensation.\n\nCORONADO POLICE DEPARTMENT\nCoronado maintains its own police department (not contracted). The CPD has 45 sworn officers for 24,000 residents — a ratio of 1.875 per 1,000 residents. Annual cost: $18M.\n\nFor La Jolla at 46,000 residents, an equivalent police department would require approximately 86 officers and cost approximately $35-40M per year.\n\nAlternative: Contract with San Diego County Sheriff at approximately $250-300 per resident per year — for La Jolla, this would be $11.5-13.8M per year."},
-    {id:'ch3',title:'City of Malibu — Coastal Incorporation Case Study',body:"CITY OF MALIBU — INCORPORATION STORY\nMalibu incorporated in 1991 after 30 years of failed attempts. The community's primary motivation was controlling its own land use and resisting dense development proposals from Los Angeles County.\n\nPRE-INCORPORATION CHALLENGES (relevant to La Jolla)\n- LA County was approving development that Malibu residents opposed\n- No local control over planning decisions\n- Services were county-provided with no community input on quality\n- Community identity was being eroded by outside decisions\n\nTHIS IS THE LA JOLLA PARALLEL.\n\nPOST-INCORPORATION OUTCOMES\n- Malibu immediately imposed a building moratorium to develop its own LCP\n- Adopted strict hillside development standards\n- Contracted with LASD for police (avoiding $30M/year police department cost)\n- Contracted with LA County Fire (avoiding $20M/year fire department cost)\n- Hired 12 city employees total in first year\n- Achieved fiscal viability in year 2\n\nKEY LESSON\nMalibu's success came from the 'contract city model' — minimal staff, maximum contracting. This model would work for La Jolla."},
-    {id:'ch4',title:'City of Rancho Palos Verdes — General Law City Model',body:"CITY OF RANCHO PALOS VERDES — KEY FACTS\nIncorporated: 1973\nPopulation: 42,000\nArea: 13.5 square miles\nAnnual Budget: $45M\nForm of government: Council-Manager (General Law)\n\nWHY RPV IS THE BEST COMPARABLE FOR LA JOLLA\n- Similar population (42,000 vs La Jolla's 46,000)\n- Similar demographic profile (affluent coastal community)\n- Similar land use challenges (coastal bluffs, view preservation)\n- Incorporated to gain local control over development\n\nLESSON FOR LA JOLLA FISCAL ANALYSIS\nRPV's per-capita budget: ~$1,070/resident\nLa Jolla projection at same ratio: ~$49M/year\nLa Jolla's stronger property tax base suggests fiscal viability is achievable at this budget level or higher."}
-  ]},
-  {id:'operations',label:'Operations & Services',questions:['What city staff would a new La Jolla need on day one?','How would La Jolla handle planning and building permits differently than San Diego?','What is the process for transferring infrastructure from City of San Diego?','How does the contract city model work for police and fire services?'],docs:[
-    {id:'o1',title:'New City Startup Requirements — First 100 Days',body:"MINIMUM STAFF FOR DAY ONE OPERATIONS\n\nRequired positions (cannot be contracted):\n1. City Manager — chief executive, $180-220K\n2. City Clerk — elections, records, council support, $90-120K\n3. City Treasurer/Finance Director — $120-150K\n4. City Attorney (can be contract) — $150-200K retainer\n\nEssential early hires (months 1-6):\n5. Planning Director — $130-160K\n6. Building Official — $110-140K\n7. Public Works Director — $120-150K\n8. HR Manager — $90-110K\n\nContract Services (recommended for new city):\n- Police: County Sheriff contract\n- Fire: County Fire contract OR negotiate with existing providers\n- Public Works maintenance: Private contractor\n- IT systems: Cloud-based, no in-house IT initially\n- Legal: Outside counsel\n\nESTIMATED FIRST-YEAR STARTUP COSTS\nPersonnel (8 staff): $900K\nLeased office space: $300K\nIT systems and technology: $500K\nLegal and consulting: $400K\nMiscellaneous startup: $200K\nTotal startup costs: ~$2.3M"},
-    {id:'o2',title:'Permit and Planning Transition from City of San Diego',body:"CURRENT STATE\nAll building permits, planning applications, and code enforcement in La Jolla are currently handled by the City of San Diego Development Services Department. This department processes approximately 800-1,000 permit applications per year in the La Jolla community planning area.\n\nCOMMON COMPLAINTS ABOUT SAN DIEGO PROCESSING\n- Average permit processing time: 90-180 days\n- Inspections often scheduled 3-4 weeks out\n- Staff unfamiliar with La Jolla-specific coastal and neighborhood character guidelines\n\nWHAT A NEW CITY COULD DO DIFFERENTLY\n1. Dedicated Planning Staff: 3-4 planners exclusively focused on La Jolla\n2. Over-the-counter permits: Routine additions and remodels processed same-day\n3. Local knowledge: Staff living in and familiar with La Jolla neighborhoods\n4. Faster inspections: Dedicated inspection staff with 1-3 day scheduling\n\nPROJECTED IMPROVEMENT\nPeer cities with local planning departments report average permit processing times of 30-60 days vs San Diego's 90-180 days."}
-  ]},
-  {id:'emergency',label:'Emergency Response',questions:['What are the evacuation routes for the La Jolla canyon zone during wildfire?','How does the current City of San Diego handle emergency response in La Jolla?','What is the chain of command for a coastal flooding emergency in La Jolla Cove?'],docs:[
-    {id:'e1',title:'La Jolla Emergency Response — Current State and Gaps',body:"CURRENT EMERGENCY RESPONSE IN LA JOLLA (City of San Diego)\nFire: San Diego Fire-Rescue Department, Station 9 (La Jolla Village) and Station 34 (Bird Rock)\nPolice: SDPD Northern Division\nEmergency Management: City of San Diego OES\n\nLa Jolla Geographic Risks:\n1. WILDFIRE: Torrey Pines canyon, Rose Canyon, Los Peñasquitos Canyon — all within or adjacent to La Jolla. Santa Ana wind conditions create extreme fire danger. Canyon zone has approximately 2,400 residents with limited evacuation routes.\n\n2. COASTAL FLOODING: La Jolla Cove area, Windansea Beach, La Jolla Shores — risk from king tides, tsunami, storm surge. Climate projections show 12-18 inch sea level rise by 2050.\n\n3. EARTHQUAKE: Rose Canyon Fault runs through La Jolla. Active fault capable of M6.5 event.\n\n4. TSUNAMI: La Jolla Shores is in the tsunami inundation zone. Warning time from major offshore event: 30-60 minutes.\n\nCURRENT GAPS\n- No La Jolla-specific emergency operations plan\n- No local EOC — would have to wait for San Diego citywide activation\n- No community-level mutual aid coordination\n- Limited cell coverage in canyon areas\n\nWHAT A NEW CITY PROVIDES\n- Local Emergency Operations Center\n- La Jolla-specific evacuation plans\n- Community emergency response team coordination\n- Direct relationship with CalFire and CHP rather than through San Diego intermediary"},
-    {id:'e2',title:'La Jolla Geographic Emergency Risks',body:"LA JOLLA GEOGRAPHIC RISK PROFILE\n\n1. WILDFIRE\nTorrey Pines canyon, Rose Canyon, and Los Peñasquitos Canyon all border or intersect the proposed La Jolla boundaries. Under Santa Ana wind conditions (dry offshore winds exceeding 40 mph with relative humidity below 15%), these canyons present extreme fire danger. The canyon residential zones have limited evacuation routes — Torrey Pines Road, La Jolla Scenic Drive, and Soledad Road are the primary egress paths.\n\n2. COASTAL FLOODING AND SEA LEVEL RISE\nLa Jolla Cove, Windansea Beach, and La Jolla Shores are exposed to king tides, tsunami risk, and storm surge.\n\n3. EARTHQUAKE\nThe Rose Canyon Fault runs through La Jolla. It is an active strike-slip fault capable of producing a magnitude 6.5 or greater event.\n\n4. TSUNAMI\nLa Jolla Shores and the low-lying beach areas are within California's official tsunami inundation zone.\n\nWHAT INCORPORATION WOULD MEAN FOR EMERGENCY SERVICES\nUnder the standard new-city contract model (used by Malibu, Del Mar, Rancho Palos Verdes), a new City of La Jolla would likely contract with the San Diego County Sheriff for police services and with either the San Diego County Fire Authority or continue an arrangement with San Diego Fire-Rescue."}
-  ]},
-  {id:'finance',label:'Finance & Budget',questions:['What would be the projected annual budget for a new City of La Jolla?','How much property tax revenue would La Jolla receive after incorporation?','What is the estimated TOT from La Jolla vacation rentals and hotels?','What is the fiscal impact on City of San Diego if La Jolla incorporates?'],docs:[
-    {id:'f1',title:'La Jolla Fiscal Analysis — Projected Revenue Model',body:"LA JOLLA REVENUE PROJECTION (annual, steady state)\n\nPROPERTY TAX\nAssessed value: $20.2B (2025 San Diego County Assessor)\nNew city property tax share: estimated 8-10% of 1% levy under AB 8 negotiation\nProjected property tax revenue: $16.2M - $20.2M per year\n\nSALES TAX (Bradley-Burns 1%)\nLa Jolla retail and restaurant sales: estimated $800M - $1.2B annually\nProjected sales tax: $8M - $12M per year\n\nTRANSIENT OCCUPANCY TAX (TOT)\nLa Jolla hotels: approximately 800 rooms\nVacation rentals: estimated 400-600 active short-term rentals\nProjected annual TOT at 10% rate: $4.5M - $6.5M per year\n\nVEHICLE LICENSE FEE (VLF) IN LIEU\nProjected VLF: $5.7M per year\n\nFRANCHISE FEES (gas, electric, cable)\nProjected at $2.5M per year\n\nBUILDING AND PLANNING FEES\nProjected at $3.5M - $5M per year\n\nTOTAL PROJECTED REVENUE: $40M - $52M annually\n\nFISCAL VIABILITY CONCLUSION\nLa Jolla has a stronger per-capita revenue base than any comparable California incorporation since Malibu in 1991."},
-    {id:'f2',title:'La Jolla Budget — Expenditure Model and Service Costs',body:"LA JOLLA EXPENDITURE MODEL (annual, steady state)\n\nPUBLIC SAFETY\nPolice (Sheriff contract, $280/resident × 46,000): $12.9M\nFire (County Fire contract): $8.5M\nEmergency Management: $400K\nPublic Safety Total: $21.8M\n\nPUBLIC WORKS\nRoad maintenance (85 lane miles): $4.2M\nParks maintenance (18 parks and open spaces): $2.1M\nSewer (likely continues with City of San Diego under contract): $1.5M\nPublic Works Total: $7.8M\n\nCOMMUNITY DEVELOPMENT: $2M\nGENERAL GOVERNMENT: $1.95M\nCAPITAL IMPROVEMENTS: $3M\nDEBT SERVICE: $2.5M/year\n\nTOTAL PROJECTED EXPENDITURES: $39M - $41M annually\n\nFISCAL SURPLUS PROJECTION\nRevenue: $40M - $52M\nExpenditures: $39M - $41M\nProjected annual surplus: $1M - $11M\n\nThis projects as a fiscally viable city under LAFCO's fiscal neutrality standard."},
-    {id:'f3',title:'Property Tax Exchange Negotiation — San Diego Impact',body:"FISCAL IMPACT ON CITY OF SAN DIEGO\nLa Jolla incorporation would remove approximately 3.2% of the City of San Diego's assessed property value base from the city's service area. However, it would also remove the obligation to provide services to La Jolla.\n\nSan Diego's annual service cost for La Jolla (estimated):\n- Police: $18M\n- Fire: $12M\n- Public Works: $8M\n- Planning and Building: $6M\n- Total estimated: $44M\n\nSan Diego's annual revenue from La Jolla:\n- Property tax: ~$35M\n- Sales tax: ~$10M\n- Other: ~$5M\n- Total: ~$50M\n\nNet fiscal impact on San Diego: approximately -$6M per year.\n\nThis means San Diego has a financial incentive to negotiate a reasonable property tax exchange and cooperate with incorporation rather than oppose it."}
-  ]},
-  {id:'news',label:'News & Legal Record',questions:['What has the City of San Diego done to block La Jolla cityhood?','What did the judge rule in the ACLJ anti-SLAPP case?','Who is Jack McGrory and why did ACLJ hire him?','What are the most common objections to La Jolla cityhood?'],docs:[
-    {id:'n1',title:'San Diego vs LAFCO — Legal Battle Timeline (Resolved)',body:"CITY OF SAN DIEGO VS LAFCO — COMPLETE LEGAL RECORD\n\nBACKGROUND\nDecember 2024: ACLJ submits over 9,000 signatures. San Diego County Registrar of Voters disqualifies more than 2,000, leaving 6,523 verified — short of the required 6,750 (25% of registered La Jolla voters).\n\nApril 29, 2025: LAFCO Executive Officer Keene Simonds, acting under statutory discretion, validates 240 additional signatures disqualified for minor misspellings, nonstandard abbreviations, or legibility issues. Certifies 6,772 total — 22 above threshold.\n\nApril 29, 2025: Mayor Todd Gloria calls LAFCO decision 'outrageous.'\n\nMay 12, 2025: San Diego City Council authorizes litigation against LAFCO in closed session.\n\nJune 2025: City of San Diego files lawsuit against LAFCO in San Diego Superior Court.\n\nAugust 25, 2025: ACLJ files anti-SLAPP motion arguing the city's suit is 'a meritless attempt to obstruct democratic participation and silence a public-interest effort through costly litigation.'\n\nOctober 24, 2025: Superior Court Judge Judy S. Bae hears arguments. Deputy City Attorney Ben Syz argues that allowing LAFCO to verify signatures 'would make the registrar of voters meaningless.' Judge Bae issues a tentative ruling in favor of ACLJ the same day.\n\nThe ruling finds that the city's lawsuit violated California's anti-SLAPP laws.\n\nJANUARY-FEBRUARY 2026: City of San Diego informs ACLJ it will NOT appeal Judge Bae's ruling. This closes the legal challenge and clears the path for LAFCO's administrative review to proceed unobstructed."},
-    {id:'n2',title:'Jack McGrory Joins ACLJ — March 2026',body:"FORMER SAN DIEGO CITY MANAGER JOINS CITYHOOD EFFORT\nSource: Times of San Diego, March 26, 2026\n\nJack McGrory, who worked for the City of San Diego for 23 years — including serving as City Manager from 1991 to 1997 — has joined the Association for the City of La Jolla as Chief Negotiator and Strategic Advisor.\n\nMcGrory's role: 'The organization needs a lead negotiator with LAFCO to get their endorsement. Then we'll have to negotiate an exit strategy with the city, and I'll be the lead negotiator on that as well.'\n\nOn the historic nature of this effort: 'What's unique about it is that this would be the first time in over 100 years that a community has exited from a city. Usually, it's an unincorporated area trying to become its own city. So we're setting new ground here, and the rules will be developed as we go to be fair to everybody.'\n\nOn San Diego's situation: 'The city as a whole is in a desperate financial situation, and clearly the services being delivered to La Jolla are inadequate. Our infrastructure is in dire need; some of our streets are nearly impassable. We want to help the city of San Diego.'"},
-    {id:'n3',title:'Ed Witt — Why This Time Is Different',body:"ED WITT STATEMENTS ON LA JOLLA CITYHOOD\nVice President, Association for the City of La Jolla\n\nON HISTORIC SIGNIFICANCE\n'This attempt at cityhood, for all of us, is extremely historical. It has never been done before. Never has a city in California left a city. There have been cities that have left counties. But never a city separating from a city: This is a big deal.'\n\nON URGENCY\n'This is our best, and I guess last chance, to do this.'\n\nSHARON WAMPLER STATEMENTS\n'I've been here 36 years and I just saw an opportunity for improvement and self-determination and for the community to actually be better.'\n'The new city of La Jolla will be required to pay some kind of alimony to San Diego. When you look at the numbers, we need $6 million to $8 million for a campaign.'\n\nDIANE KANE STATEMENTS\nPresident, ACLJ.\n'Cityhood cannot go forward unless it is revenue neutral. San Diego cannot lose money.'\n'In the end, the decision of becoming a city belongs to the voters.'"},
-    {id:'n4',title:'Fiscal Analysis — Real Numbers',body:"LA JOLLA CITYHOOD FISCAL ANALYSIS — VERIFIED FIGURES\nSource: Richard Berkson, Berkson Associates (urban economist)\n\nKEY FINDING\nLa Jolla generates $83.8 million in revenue for the City of San Diego.\nThe City of San Diego spends $74.8 million providing services to La Jolla.\nNet surplus: approximately $9 million.\n\nThis $9 million difference proves La Jolla is fiscally viable as an independent city.\n\nFUNDRAISING STATUS (as of January-February 2026)\nStill needed to complete final fiscal analysis: approximately $200,000.\nFull campaign cost estimate through a potential 2028 election: $4-6 million to $6-8 million.\nApplication fees already paid: $66,000.\n\nFREQUENTLY CITED CONCERN\nA successful incorporation requires majority approval from ALL San Diego voters — not just La Jolla voters. This is the biggest difference from standard incorporation. The Valley and Hollywood secession movements in Los Angeles were approved by LAFCO but rejected by all LA voters in 2002. This double election requirement is ACLJ's biggest electoral challenge."},
-    {id:'n5',title:'Malibu Comparison — Lessons for La Jolla',body:"MALIBU INCORPORATION — THE TEMPLATE\nSource: La Jolla Light, April 26, 2023\n\nMalibu incorporated in 1991 after decades of effort. The primary driver: Los Angeles County was moving forward with a large sewer project residents opposed.\n\nChristi Hogin, lawyer who helped broker Malibu's incorporation: 'The county was moving forward with a sewer project that was viewed as growth-inducing. The concern was that local residents would lose control of the way the town looked.'\n\nPARTICULAR CHALLENGE FOR LA JOLLA\nNo community in California has successfully seceded from a city since LAFCOs were created in 1963.\nLa Jolla's detachment requires a double election: La Jollans vote yes AND all San Diego voters vote yes.\n\nKeene Simonds, San Diego LAFCO Executive Officer: 'There hasn't been a successful incorporation in California since the early 2010s. But some community is going to break the streak, and La Jolla seemingly is in a good position — more so than others, since it has a good and increasing tax base.'"}
-  ]}
+const DEFAULT_QUESTIONS = [
+  'What are LAFCO’s criteria for approving incorporation?',
+  'Revenue neutrality makes incorporation unworkable',
+  'San Diego’s strongest attack is procedural rather than fiscal',
+  'The Berkson model is positive but assumption-heavy',
+  'What does the CFA need to prove?',
+  'How did LAFCO validate the signatures?'
 ];
 
-/* state */
-let activeFilter='all'; // 'all' or preset id
-let allDocs=[];
-let lastQ='';
-let CURRENT_DOC=null;
+let activeFilter = 'all';
+let CORPUS = [];
+let DOCS = [];
+let DOC_INDEX = new Map();
+let FILTERS = [];
+let lastQ = '';
+let CURRENT_DOC = null;
 
-PRESETS.forEach(p=>p.docs.forEach(d=>allDocs.push({...d,corpus:p.id,corpusLabel:p.label})));
+function canonTitle(entry){
+  return entry?.source || entry?.title || 'Source document';
+}
 
-/* ── UI ─────────────────────────── */
-function buildFilters(){
-  const wrap=document.getElementById('filters');
-  const total=allDocs.length;
-  let html=`<span class="filters-lbl">Sources</span>`;
-  html+=`<button class="filt ${activeFilter==='all'?'on':''}" data-id="all" onclick="setFilter('all')">All <span style="opacity:.5;font-size:11px;margin-left:4px;">${total}</span></button>`;
-  PRESETS.forEach(p=>{
-    html+=`<button class="filt ${activeFilter===p.id?'on':''}" data-id="${p.id}" onclick="setFilter('${p.id}')">${esc(p.label)} <span style="opacity:.5;font-size:11px;margin-left:4px;">${p.docs.length}</span></button>`;
+function parseOrdinal(entry){
+  const t = String(entry?.title || '');
+  const m = t.match(/—\s*(\d+)\/\d+\s*$/);
+  return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
+}
+
+function buildDocIndex(){
+  const bySource = new Map();
+  for (const item of CORPUS){
+    const key = canonTitle(item);
+    if (!bySource.has(key)) bySource.set(key, []);
+    bySource.get(key).push(item);
+  }
+
+  DOCS = [...bySource.entries()].map(([key, items]) => {
+    items.sort((a,b) => parseOrdinal(a) - parseOrdinal(b));
+    const titleBase = String(items[0]?.title || key).replace(/\s+—\s*\d+\/\d+\s*$/, '').trim() || key;
+    return {
+      id: key,
+      source: items[0]?.source || key,
+      title: titleBase,
+      corpusLabel: items[0]?.cat || 'Record',
+      items,
+      body: items.map(x => String(x.text || '').trim()).join('\n\n')
+    };
   });
-  wrap.innerHTML=html;
+
+  DOC_INDEX = new Map(DOCS.map(d => [d.id, d]));
+}
+
+function buildFiltersFromCorpus(){
+  const counts = new Map();
+  for (const item of CORPUS){
+    const cat = item.cat || 'Uncategorized';
+    counts.set(cat, (counts.get(cat) || 0) + 1);
+  }
+  FILTERS = [...counts.entries()]
+    .map(([id, count]) => ({ id, label:id, count }))
+    .sort((a,b) => a.label.localeCompare(b.label));
+}
+
+function buildFilters(){
+  const wrap = document.getElementById('filters');
+  const total = CORPUS.length;
+  let out = '<span class="filters-lbl">Sources</span>';
+  out += `<button class="filt ${activeFilter==='all'?'on':''}" data-id="all" onclick="setFilter('all')">All <span>${total}</span></button>`;
+  FILTERS.forEach(f => {
+    out += `<button class="filt ${activeFilter===f.id?'on':''}" data-id="${esc(f.id)}" onclick="setFilter(${JSON.stringify(f.id).replace(/"/g, '&quot;')})">${esc(f.label)} <span>${f.count}</span></button>`;
+  });
+  wrap.innerHTML = out;
 }
 
 function setFilter(id){
-  activeFilter=id;
-  document.querySelectorAll('.filt').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+  activeFilter = id;
+  document.querySelectorAll('.filt').forEach(b => b.classList.toggle('on', b.dataset.id === id));
   buildSugs();
 }
 
 function buildSugs(){
-  // pull a few questions, mixed across corpora or scoped to active
-  let pool=[];
-  if(activeFilter==='all'){
-    // sample one from each
-    PRESETS.forEach(p=>{if(p.questions[0])pool.push(p.questions[0]);});
-    pool=pool.slice(0,6);
-  }else{
-    const p=PRESETS.find(x=>x.id===activeFilter);
-    pool=p?p.questions.slice(0,6):[];
+  const list = document.getElementById('sug-list');
+  let pool = [...DEFAULT_QUESTIONS];
+
+  if (activeFilter !== 'all'){
+    const keyword = String(activeFilter).toLowerCase();
+    if (keyword.includes('legal')) pool.unshift('What happened in the San Diego vs LAFCO litigation?');
+    if (keyword.includes('fiscal') || keyword.includes('budget')) pool.unshift('What does revenue neutrality require?');
+    if (keyword.includes('lafco')) pool.unshift('How many signatures were validated over the threshold?');
   }
-  document.getElementById('sug-list').innerHTML=pool.map(q=>
-    `<div class="sug-row" onclick="setQ(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}<span class="sug-row-arrow">→</span></div>`
+
+  pool = [...new Set(pool)].slice(0, 6);
+  list.innerHTML = pool.map(q =>
+    `<div class="sug-row" onclick="setQ(${JSON.stringify(q).replace(/"/g, '&quot;')})">${esc(q)}<span class="sug-row-arrow">→</span></div>`
   ).join('');
 }
 
 function setQ(q){
-  document.getElementById('q').value=q;
+  document.getElementById('q').value = q;
   go();
 }
 
-/* ── ENGINE ─────────────────────── */
 function activeCorpus(){
-  if(activeFilter==='all') return [...allDocs];
-  return allDocs.filter(d=>d.corpus===activeFilter);
+  if (activeFilter === 'all') return CORPUS;
+  return CORPUS.filter(d => (d.cat || 'Uncategorized') === activeFilter);
 }
 
-function buildCands(docs){
-  const m=new Map(),c=[];
-  docs.forEach(doc=>{
-    const words=doc.body.split(/\s+/);
-    for(let i=0;i<words.length;i+=80){
-      const chunk=words.slice(i,i+120).join(' ');
-      if(chunk.length<40)break;
-      const key=doc.title+': '+chunk.slice(0,500);
-      c.push(key);m.set(key,{doc,chunk});
-      if(i+120>=words.length)break;
+async function loadCorpus(){
+  try{
+    const r = await fetch(CORPUS_URL, { cache:'no-store' });
+    if (!r.ok) throw new Error(`Could not load corpus.json (${r.status})`);
+
+    CORPUS = await r.json();
+    if (!Array.isArray(CORPUS) || !CORPUS.length) throw new Error('corpus.json is empty');
+
+    CORPUS = CORPUS.map((item, idx) => ({
+      ...item,
+      __id: idx,
+      cat: item.cat || 'Uncategorized',
+      source: item.source || item.title || `Document ${idx+1}`
+    }));
+
+    buildDocIndex();
+    buildFiltersFromCorpus();
+    buildFilters();
+    buildSugs();
+
+    const count = CORPUS.length;
+    const docs = new Set(CORPUS.map(x => x.source)).size;
+    const sug = document.getElementById('sugs');
+    if (sug && sug.querySelector('.sugs-lbl')){
+      sug.querySelector('.sugs-lbl').textContent = `Try one of these · ${count} passages · ${docs} source documents`;
     }
-  });
-  return{c,m};
+  } catch(e){
+    const sug = document.getElementById('sugs');
+    if (sug){
+      sug.innerHTML = `<div class="err">Corpus failed to load. ${esc(e.message)}. Make sure <code>corpus.json</code> is in the same folder as this HTML and the page is served over http/https.</div>`;
+    }
+    const filters = document.getElementById('filters');
+    if (filters) filters.innerHTML = '';
+  }
+}
+
+function makeCandidateText(item){
+  return String(item.text || '').replace(/\s+/g, ' ').trim();
 }
 
 async function go(){
-  const q=document.getElementById('q').value.trim();
-  if(!q)return;
-  lastQ=q;
-  await runQ(q,q,{preserveResult:false});
+  const q = document.getElementById('q').value.trim();
+  if (!q || !CORPUS.length) return;
+  lastQ = q;
+  await runQ(q, q, { preserveResult:false });
 }
 
-async function runQ(fullQ,displayQ,opts={}){
-  const preserveResult=!!opts.preserveResult;
-  document.getElementById('sugs').style.display='none';
-  const resultEl=document.getElementById('result');
-  if(preserveResult){
+async function runQ(fullQ, displayQ, opts = {}){
+  const preserveResult = !!opts.preserveResult;
+  document.getElementById('sugs').style.display = 'none';
+
+  const resultEl = document.getElementById('result');
+  if (preserveResult){
     resultEl.classList.add('on');
-    resultEl.innerHTML='<div class="r-card"><div class="r-tag">Searching this angle</div><div class="r-title">'+esc(displayQ)+'</div><div class="r-passage">Re-scoring the corpus from this perspective…</div></div>';
-  }else{
+    resultEl.innerHTML = '<div class="r-card"><div class="r-tag">Searching this angle</div><div class="r-title">'+esc(displayQ)+'</div><div class="r-passage">Re-scoring the record through ARBITER…</div></div>';
+  } else {
     resultEl.classList.remove('on');
   }
-  const loading=document.getElementById('loading');
+
+  const loading = document.getElementById('loading');
   loading.classList.add('on');
-  const docs=activeCorpus();
-  const{c,m}=buildCands(docs);
-  document.getElementById('loading-count').textContent=docs.length+' documents';
-  const t0=performance.now();
+
+  const docs = activeCorpus();
+  const candidates = docs.map(makeCandidateText);
+  const textMap = new Map();
+
+  docs.forEach((doc, idx) => {
+    const t = candidates[idx];
+    if (!textMap.has(t)) textMap.set(t, []);
+    textMap.get(t).push(doc);
+  });
+
+  document.getElementById('loading-count').textContent = docs.length + ' passages';
+
+  const t0 = performance.now();
+
   try{
-    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:fullQ,candidates:c})});
-    if(!r.ok)throw new Error('API '+r.status);
-    const d=await r.json();
-    const ms=Math.round(performance.now()-t0);
-    const scored=(d.all||[]).sort((a,b)=>b.score-a.score);
-    const seen=new Set(),results=[];
-    for(const item of scored){
-      const hit=m.get(item.text);
-      if(!hit||seen.has(hit.doc.id))continue;
-      seen.add(hit.doc.id);results.push({...hit,score:item.score});
-      if(results.length>=5)break;
+    const r = await fetch(API, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ query: fullQ, candidates })
+    });
+
+    if (!r.ok) throw new Error('API ' + r.status);
+
+    const d = await r.json();
+    const ms = Math.round(performance.now() - t0);
+    const ranked = (d.all || d.results || []).slice().sort((a,b) => b.score - a.score);
+
+    const results = [];
+    const seenIds = new Set();
+
+    for (const item of ranked){
+      const queue = textMap.get(item.text);
+      if (!queue || !queue.length) continue;
+      const hit = queue.shift();
+      if (seenIds.has(hit.__id)) continue;
+      seenIds.add(hit.__id);
+
+      const docObj = DOC_INDEX.get(canonTitle(hit)) || {
+        id: canonTitle(hit),
+        title: String(hit.title || hit.source || 'Source document').replace(/\s+—\s*\d+\/\d+\s*$/, '').trim(),
+        source: hit.source,
+        corpusLabel: hit.cat,
+        body: String(hit.text || '')
+      };
+
+      results.push({ doc: docObj, hit, chunk: String(hit.text || '').trim(), score: item.score });
+      if (results.length >= 5) break;
     }
-    render(displayQ,results,ms,c.length);
-  }catch(e){
-    document.getElementById('result').innerHTML=`<div class="err">${esc(e.message)}</div>`;
-    document.getElementById('result').classList.add('on');
-  }finally{
+
+    render(displayQ, results, ms, docs.length);
+
+  } catch(e){
+    resultEl.innerHTML = `<div class="err">${esc(e.message)}</div>`;
+    resultEl.classList.add('on');
+  } finally {
     loading.classList.remove('on');
   }
 }
 
-/* snap a chunk to clean sentence boundaries within the parent doc body */
-function cleanPassage(body,chunk,maxLen){
-  if(!body||!chunk)return(chunk||'').slice(0,maxLen);
-  // locate chunk in body using a normalized prefix to survive whitespace differences
-  const probe=chunk.replace(/\s+/g,' ').trim().slice(0,60);
-  const norm=body.replace(/\s+/g,' ');
-  let idx=norm.indexOf(probe);
-  if(idx<0){
-    // fallback: just trim leading partial sentence from chunk
-    const m=chunk.match(/[.!?]\s+[A-Z0-9]/);
-    let s=chunk;
-    if(m&&m.index<chunk.length/3)s=chunk.slice(m.index+2);
-    return s.slice(0,maxLen).replace(/\s+\S*$/,'')+(s.length>maxLen?'…':'');
-  }
-  // expand start back to sentence boundary
-  let start=idx;
-  while(start>0){
-    const c=norm[start-1];
-    if(c==='.'||c==='!'||c==='?'||c==='\n'){break;}
-    start--;
-    if(idx-start>200)break;
-  }
-  // skip the punctuation+space we landed after
-  while(start<norm.length&&/[.!?\s]/.test(norm[start]))start++;
-  // expand end forward to sentence boundary, target maxLen
-  let end=Math.min(start+maxLen,norm.length);
-  if(end<norm.length){
-    // pull end back to last sentence-ending punctuation in window
-    const window=norm.slice(start,end);
-    const lastEnd=Math.max(window.lastIndexOf('. '),window.lastIndexOf('! '),window.lastIndexOf('? '));
-    if(lastEnd>maxLen*0.5)end=start+lastEnd+1;
-  }
-  let out=norm.slice(start,end).trim();
-  if(end<norm.length&&!/[.!?]$/.test(out))out+='…';
-  return out;
+function cleanPassage(body, chunk, maxLen){
+  const raw = String(chunk || body || '').replace(/\s+/g, ' ').trim();
+  if (raw.length <= maxLen) return raw;
+  let cut = raw.slice(0, maxLen);
+  const last = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '), cut.lastIndexOf('; '));
+  if (last > maxLen * 0.55) cut = cut.slice(0, last + 1);
+  return cut.trim() + '…';
 }
 
-function render(displayQ,results,ms,total){
-  if(!results.length){
-    document.getElementById('result').innerHTML='<div class="err">Nothing found. Try rephrasing.</div>';
-    document.getElementById('result').classList.add('on');
+function render(displayQ, results, ms, total){
+  const r = document.getElementById('result');
+
+  if (!results.length){
+    r.innerHTML = '<div class="err">Nothing found. Try rephrasing.</div>';
+    r.classList.add('on');
     return;
   }
-  const top=results[0],others=results.slice(1);
-  const passage=cleanPassage(top.doc.body,top.chunk,1100);
 
-  CURRENT_DOC={doc:top.doc, passage:passage, results:results};
+  const top = results[0];
+  const others = results.slice(1);
+  const passage = cleanPassage(top.doc.body, top.chunk, 1100);
 
-  let alsoHtml='';
-  if(others.length){
-    alsoHtml='<div class="r-also"><div class="r-also-head">Also relevant</div>'+
-      others.map((r,i)=>`
+  CURRENT_DOC = { doc: top.doc, hit: top.hit, passage, results };
+
+  let alsoHtml = '';
+  if (others.length){
+    alsoHtml = '<div class="r-also"><div class="r-also-head">Also relevant</div>' +
+      others.map((r, i) => `
         <div class="r-also-row" onclick="openOtherDoc(${i+1})">
           <div class="r-also-n">${String(i+2).padStart(2,'0')}</div>
           <div class="r-also-body">
             <div class="r-also-title">${esc(r.doc.title)}</div>
-            <div class="r-also-snip">${esc(cleanPassage(r.doc.body,r.chunk,90))}</div>
+            <div class="r-also-snip">${esc(cleanPassage(r.doc.body, r.chunk, 90))}</div>
           </div>
           <div class="r-also-sc">${r.score.toFixed(3)}</div>
-        </div>`).join('')+'</div>';
+        </div>`).join('') +
+      '</div>';
   }
 
-  const html=
-    '<button class="r-back" onclick="newSearch()">← New search</button>'+
-    '<div class="r-q"><span class="r-q-lbl">Question</span><span class="r-q-val">'+esc(displayQ)+'</span></div>'+
-    '<div class="r-card">'+
-      '<div class="r-tag">'+esc(top.doc.corpusLabel||'Source')+'</div>'+
-      '<div class="r-title">'+esc(top.doc.title)+'</div>'+
-      '<div class="r-passage">'+esc(passage)+'</div>'+
-      '<div class="r-meta">'+
-        '<div class="r-score">'+
-          '<div class="r-score-num" id="snum">0.000</div>'+
-          '<div class="r-score-lbl">Coherence</div>'+
-        '</div>'+
-        '<div class="r-meta-dots"><span>'+ms+'ms</span> · <span>'+total+' passages</span> · <span>ARBITER 72D</span></div>'+
-      '</div>'+
-      '<div class="r-actions">'+
-        '<button type="button" class="r-open" onclick="openDoc()">Open source document</button>'+
-        '<button type="button" class="r-full" onclick="openDoc(true)">View full document →</button>'+
-      '</div>'+
-    '</div>'+
-    alsoHtml+
-    '<div class="r-rerun">'+
-      '<div class="r-rerun-lbl">Search from a stakeholder angle</div>'+
-      '<div class="r-rerun-desc">This simply appends a role to the question so the same record can be queried through a specific stakeholder lens.</div>'+
-      '<div class="r-rerun-chips">'+
-        '<button type="button" class="pp" onclick="applyAngle(\'City attorney\')">City attorney</button>'+
-        '<button type="button" class="pp" onclick="applyAngle(\'Real estate attorney\')">Real estate attorney</button>'+
-        '<button type="button" class="pp" onclick="applyAngle(\'LAFCO staff\')">LAFCO staff</button>'+
-        '<button type="button" class="pp" onclick="applyAngle(\'Skeptical voter\')">Skeptical voter</button>'+
-        '<button type="button" class="pp" onclick="applyAngle(\'Property owner\')">Property owner</button>'+
-        '<button type="button" class="pp" onclick="applyAngle(\'City manager\')">City manager</button>'+
-      '</div>'+
-      '<div class="r-rerun-row">'+
-        '<input class="r-rerun-input" id="rerunQ" value="'+esc(displayQ)+'" onkeydown="if(event.key===\'Enter\')rerun()">'+
-        '<button type="button" class="r-rerun-btn" onclick="rerun()">Search this angle</button>'+
-      '</div>'+
+  r.innerHTML =
+    '<button class="r-back" onclick="newSearch()">← New search</button>' +
+    '<div class="r-q"><span class="r-q-lbl">Question</span><span class="r-q-val">'+esc(displayQ)+'</span></div>' +
+    '<div class="r-card">' +
+      '<div class="r-tag">'+esc(top.hit.cat || top.doc.corpusLabel || 'Source')+'</div>' +
+      '<div class="r-title">'+esc(top.doc.title)+'</div>' +
+      '<div class="r-passage">'+esc(passage)+'</div>' +
+      '<div class="r-meta">' +
+        '<div class="r-score">' +
+          '<div class="r-score-num" id="snum">0.000</div>' +
+          '<div class="r-score-lbl">Coherence</div>' +
+        '</div>' +
+        '<div class="r-meta-dots"><span>'+ms+'ms</span> · <span>'+total+' passages</span> · <span>ARBITER compare</span></div>' +
+      '</div>' +
+      '<div class="r-actions">' +
+        '<button type="button" class="r-open" onclick="openDoc()">Open source document</button>' +
+        '<button type="button" class="r-full" onclick="openDoc(true)">View full document →</button>' +
+      '</div>' +
+    '</div>' +
+    alsoHtml +
+    '<div class="r-rerun">' +
+      '<div class="r-rerun-lbl">Search from a stakeholder angle</div>' +
+      '<div class="r-rerun-desc">This reruns the same record through ARBITER after appending a stakeholder role to the question.</div>' +
+      '<div class="r-rerun-chips">' +
+        '<button type="button" class="pp" onclick="applyAngle(\'City attorney\')">City attorney</button>' +
+        '<button type="button" class="pp" onclick="applyAngle(\'LAFCO staff\')">LAFCO staff</button>' +
+        '<button type="button" class="pp" onclick="applyAngle(\'Skeptical voter\')">Skeptical voter</button>' +
+        '<button type="button" class="pp" onclick="applyAngle(\'Property owner\')">Property owner</button>' +
+        '<button type="button" class="pp" onclick="applyAngle(\'City manager\')">City manager</button>' +
+      '</div>' +
+      '<div class="r-rerun-row">' +
+        '<input class="r-rerun-input" id="rerunQ" value="'+esc(displayQ)+'" onkeydown="if(event.key===\'Enter\')rerun()">' +
+        '<button type="button" class="r-rerun-btn" onclick="rerun()">Search this angle</button>' +
+      '</div>' +
     '</div>';
 
-  const r=document.getElementById('result');
-  r.innerHTML=html;
   r.classList.add('on');
   animScore(top.score);
 }
 
 function animScore(target){
-  const el=document.getElementById('snum');if(!el)return;
-  const dur=600,t0=performance.now();
+  const el = document.getElementById('snum');
+  if (!el) return;
+  const dur = 600, t0 = performance.now();
   (function tick(now){
-    const t=Math.min((now-t0)/dur,1);
-    const e=1-Math.pow(1-t,3);
-    el.textContent=(e*target).toFixed(3);
-    if(t<1)requestAnimationFrame(tick);
-    else el.textContent=target.toFixed(3);
+    const t = Math.min((now - t0) / dur, 1);
+    const e = 1 - Math.pow(1 - t, 3);
+    el.textContent = (e * target).toFixed(3);
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = target.toFixed(3);
   })(performance.now());
 }
 
 function stripAnglePrefix(text){
-  return (text||'').trim().replace(/\s+As\s+(a|an)\s+[^,?.!]+$/i,'').replace(/^As\s+(a|an|the)\s+[^,]+,\s*/i,'').trim();
+  return (text || '')
+    .trim()
+    .replace(/\s+As\s+(a|an)\s+[^,?.!]+$/i, '')
+    .replace(/^As\s+(a|an|the)\s+[^,]+,\s*/i, '')
+    .trim();
 }
+
 function applyAngle(role){
-  const input=document.getElementById('rerunQ');if(!input)return;
-  let base=stripAnglePrefix(input.value);
-  if(!base&&lastQ)base=stripAnglePrefix(lastQ);
-  input.value=(base ? base+' ' : '')+'As a '+role;
+  const input = document.getElementById('rerunQ');
+  if (!input) return;
+  let base = stripAnglePrefix(input.value);
+  if (!base && lastQ) base = stripAnglePrefix(lastQ);
+  input.value = (base ? base + ' ' : '') + 'As a ' + role;
   input.focus();
-  input.setSelectionRange(input.value.length,input.value.length);
+  input.setSelectionRange(input.value.length, input.value.length);
 }
+
 function rerun(){
-  const input=document.getElementById('rerunQ');if(!input)return;
-  const fullQ=input.value.trim();if(!fullQ)return;
-  const y=window.scrollY;
-  if(document.activeElement&&typeof document.activeElement.blur==='function')document.activeElement.blur();
-  runQ(fullQ,fullQ,{preserveResult:true}).then(()=>window.scrollTo(0,y));
+  const input = document.getElementById('rerunQ');
+  if (!input) return;
+  const fullQ = input.value.trim();
+  if (!fullQ) return;
+  const y = window.scrollY;
+  if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
+  runQ(fullQ, fullQ, { preserveResult:true }).then(() => window.scrollTo(0, y));
 }
 
-
-function docHtml(body,passage,full){
-  const safeBody=esc(body||'');
-  const safePass=esc((passage||'').trim());
-  if(!safePass||full)return safeBody;
-  const idx=safeBody.indexOf(safePass);
-  if(idx<0)return safeBody;
-  return safeBody.slice(0,idx)+'<span id="doc-pass" class="doc-pass">'+safePass+'</span>'+safeBody.slice(idx+safePass.length);
+function docHtml(body, passage, full){
+  const safeBody = esc(body || '');
+  const safePass = esc((passage || '').trim());
+  if (!safePass || full) return safeBody;
+  const idx = safeBody.indexOf(safePass);
+  if (idx < 0) return safeBody;
+  return safeBody.slice(0, idx) + '<span id="doc-pass" class="doc-pass">' + safePass + '</span>' + safeBody.slice(idx + safePass.length);
 }
+
 function openDoc(full=false){
-  if(!CURRENT_DOC||!CURRENT_DOC.doc)return;
-  document.getElementById('doc-kicker').textContent=CURRENT_DOC.doc.corpusLabel||'Source document';
-  document.getElementById('doc-title').textContent=CURRENT_DOC.doc.title||'';
-  document.getElementById('doc-jump').textContent=full?'Full document':'Jumped to the passage used for this answer';
-  document.getElementById('doc-paper').innerHTML=docHtml(CURRENT_DOC.doc.body||'',CURRENT_DOC.passage||'',full);
-  const modal=document.getElementById('doc-modal');
+  if (!CURRENT_DOC || !CURRENT_DOC.doc) return;
+  document.getElementById('doc-kicker').textContent = CURRENT_DOC.hit?.cat || CURRENT_DOC.doc.corpusLabel || 'Source document';
+  document.getElementById('doc-title').textContent = CURRENT_DOC.doc.title || '';
+  document.getElementById('doc-jump').textContent = full ? 'Full document' : 'Jumped to the passage used for this answer';
+  document.getElementById('doc-paper').innerHTML = docHtml(CURRENT_DOC.doc.body || '', CURRENT_DOC.passage || '', full);
+  const modal = document.getElementById('doc-modal');
   modal.classList.add('on');
-  modal.setAttribute('aria-hidden','false');
-  document.body.style.overflow='hidden';
-  const body=document.getElementById('doc-body');
-  body.scrollTop=0;
-  if(!full){
-    requestAnimationFrame(()=>{
-      const el=document.getElementById('doc-pass');
-      if(el)el.scrollIntoView({block:'center'});
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  const body = document.getElementById('doc-body');
+  body.scrollTop = 0;
+  if (!full){
+    requestAnimationFrame(() => {
+      const el = document.getElementById('doc-pass');
+      if (el) el.scrollIntoView({ block:'center' });
     });
   }
 }
+
 function openOtherDoc(idx){
-  if(!CURRENT_DOC||!CURRENT_DOC.results||!CURRENT_DOC.results[idx])return;
-  const hit=CURRENT_DOC.results[idx];
-  CURRENT_DOC={doc:hit.doc,passage:cleanPassage(hit.doc.body,hit.chunk,1100),results:CURRENT_DOC.results};
+  if (!CURRENT_DOC || !CURRENT_DOC.results || !CURRENT_DOC.results[idx]) return;
+  const hit = CURRENT_DOC.results[idx];
+  CURRENT_DOC = {
+    doc: hit.doc,
+    hit: hit.hit,
+    passage: cleanPassage(hit.doc.body, hit.chunk, 1100),
+    results: CURRENT_DOC.results
+  };
   openDoc(false);
 }
+
 function closeDoc(){
-  const modal=document.getElementById('doc-modal');
-  if(!modal)return;
+  const modal = document.getElementById('doc-modal');
+  if (!modal) return;
   modal.classList.remove('on');
-  modal.setAttribute('aria-hidden','true');
-  document.body.style.overflow='';
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
 }
-window.addEventListener('keydown',e=>{if(e.key==='Escape')closeDoc();});
-document.addEventListener('click',e=>{
-  const modal=document.getElementById('doc-modal');
-  if(modal&&e.target===modal)closeDoc();
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDoc();
+});
+
+document.addEventListener('click', e => {
+  const modal = document.getElementById('doc-modal');
+  if (modal && e.target === modal) closeDoc();
 });
 
 function scrollToSearch(){
-  const target=document.getElementById('search-section')||document.getElementById('q');
-  if(target) target.scrollIntoView({behavior:'smooth',block:'center'});
-  setTimeout(()=>document.getElementById('q')?.focus(),350);
+  const target = document.getElementById('search-section') || document.getElementById('q');
+  if (target) target.scrollIntoView({ behavior:'smooth', block:'center' });
+  setTimeout(() => document.getElementById('q')?.focus(), 350);
 }
-
-
 
 function newSearch(){
-  document.getElementById('q').value='';
+  document.getElementById('q').value = '';
   document.getElementById('result').classList.remove('on');
-  document.getElementById('sugs').style.display='block';
+  document.getElementById('sugs').style.display = 'block';
   setFilter('all');
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top:0, behavior:'smooth' });
 }
 
-/* dek doc count — auto from PRESETS */
-buildFilters();
-buildSugs();
+document.getElementById('logo').addEventListener('click', (e) => {
+  e.preventDefault();
+  newSearch();
+});
+
+loadCorpus();
 </script>
 
 <div id="doc-modal" class="doc-modal" aria-hidden="true">
