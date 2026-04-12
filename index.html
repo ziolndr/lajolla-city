@@ -1254,6 +1254,39 @@ body{min-height:100vh;}
 .r-summary-status{margin-top:12px}
 .cache-note{font:400 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink4)}
 
+
+/* v4 signal structure */
+.sig-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.sig-badge{
+  font:400 10px/1 var(--mono);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--ink4);
+  padding:7px 9px;
+  border:1px solid var(--line);
+  border-radius:999px;
+}
+.r-axis{border-top:1px solid var(--line2);padding-top:10px}
+.r-axis:first-child{border-top:none;padding-top:0}
+.r-axis-k{
+  font:400 9px/1 var(--mono);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink4);
+  margin-bottom:6px;
+}
+.r-axis-v{
+  font:400 13px/1.55 var(--sans);
+  color:var(--ink2);
+}
+.stress-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.stress-btn{
+  appearance:none;border:1px solid var(--line);background:transparent;color:var(--ink2);
+  border-radius:999px;padding:10px 12px;cursor:pointer;
+  font:400 12px/1 var(--sans);
+}
+.stress-btn:hover{background:rgba(10,10,10,.03)}
+
 </style>
 </head>
 <body>
@@ -1519,9 +1552,11 @@ const TITLE_MAP = {
 
 const FILTER_PREFILTER_LIMIT = 96;
 const COUNTER_PREFILTER_LIMIT = 72;
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
+const ADMIN_ONLY_FILTER = '__ADMIN_ONLY__';
 
 let activeFilter = 'all';
+let adminOnlyMode = false;
 let CORPUS = [];
 let DOCS = [];
 let DOC_INDEX = new Map();
@@ -1567,6 +1602,30 @@ function scoreCompact(score){
   if (score >= 0.45) return 'Partial support';
   return 'Weak support';
 }
+
+function inferMeta(item){
+  const title = cleanText(item.title || item.source || '');
+  const text = cleanText(item.text || '');
+  const blob = (title + ' ' + text).toLowerCase();
+
+  let author = 'Record';
+  if (blob.includes('mayor gloria') || blob.includes('city of san diego') || blob.includes('whitburn') || blob.includes('von wilpert')) author = 'City of San Diego';
+  else if (blob.includes('lafco')) author = 'LAFCO';
+  else if (blob.includes('association for the city of la jolla') || blob.includes('aclj')) author = 'ACLJ';
+
+  let docType = 'ADMINISTRATIVE';
+  if (blob.includes('letter') || blob.includes('statement')) docType = 'POLITICAL';
+  if (blob.includes('rfp') || blob.includes('certificate') || blob.includes('agenda') || blob.includes('application notice') || blob.includes('official statement')) docType = 'ADMINISTRATIVE';
+  if (blob.includes('lawsuit') || blob.includes('court') || blob.includes('anti-slapp') || blob.includes('superior court') || blob.includes('litigation')) docType = 'LEGAL';
+
+  let stage = 'general';
+  if (blob.includes('petition') || blob.includes('signature') || blob.includes('validation') || blob.includes('rov')) stage = 'petition validation';
+  if (blob.includes('fiscal') || blob.includes('revenue neutrality') || blob.includes('cfa') || blob.includes('ptvlf')) stage = 'fiscal';
+  if (blob.includes('lawsuit') || blob.includes('court') || blob.includes('litigation')) stage = 'litigation';
+
+  return { author, docType, stage };
+}
+
 function buildDocIndex(){
   const bySource = new Map();
   for (const item of CORPUS){
@@ -1577,6 +1636,7 @@ function buildDocIndex(){
   DOCS = [...bySource.entries()].map(([key, items]) => {
     items.sort((a,b) => parseOrdinal(a) - parseOrdinal(b));
     const rawTitle = String(items[0]?.title || key).replace(/\s+—\s*\d+\/\d+\s*$/, '').trim() || key;
+    const meta = inferMeta(items[0]);
     return {
       id: key,
       source: items[0]?.source || key,
@@ -1584,7 +1644,8 @@ function buildDocIndex(){
       rawTitle,
       corpusLabel: items[0]?.cat || 'Record',
       items,
-      body: items.map(x => String(x.text || '').trim()).join('\n\n')
+      body: items.map(x => String(x.text || '').trim()).join('\n\n'),
+      meta
     };
   });
   DOC_INDEX = new Map(DOCS.map(d => [d.id, d]));
@@ -1628,10 +1689,17 @@ function buildSugs(){
   ).join('');
 }
 function setQ(q){ document.getElementById('q').value = q; go(); }
+
 function activeCorpus(){
-  if (activeFilter === 'all') return CORPUS;
-  return CORPUS.filter(d => (d.cat || 'Uncategorized') === activeFilter);
+  let docs = activeFilter === 'all'
+    ? CORPUS
+    : CORPUS.filter(d => (d.cat || 'Uncategorized') === activeFilter);
+  if (adminOnlyMode){
+    docs = docs.filter(d => inferMeta(d).docType === 'ADMINISTRATIVE');
+  }
+  return docs;
 }
+
 async function loadCorpus(){
   try{
     const r = await fetch(CORPUS_URL, { cache:'no-store' });
@@ -1642,7 +1710,8 @@ async function loadCorpus(){
       ...item,
       __id: idx,
       cat: item.cat || 'Uncategorized',
-      source: item.source || item.title || `Document ${idx+1}`
+      source: item.source || item.title || `Document ${idx+1}`,
+      meta: inferMeta(item)
     }));
     buildDocIndex();
     buildFiltersFromCorpus();
@@ -1661,6 +1730,7 @@ async function loadCorpus(){
     if (filters) filters.innerHTML = '';
   }
 }
+
 function claimToCounterPrompts(claim){
   const base = cleanText(claim);
   return [
@@ -1669,31 +1739,58 @@ function claimToCounterPrompts(claim){
     `What evidence in the record argues the opposite of this claim: ${base}`
   ];
 }
+function invertClaim(claim){
+  const c = cleanText(claim);
+  const swaps = [
+    [/\bwas not\b/i, 'was'],
+    [/\bwas\b/i, 'was not'],
+    [/\bcannot\b/i, 'can'],
+    [/\bcan\b/i, 'cannot'],
+    [/\bshould not\b/i, 'should'],
+    [/\bshould\b/i, 'should not'],
+    [/\bstrongest\b/i, 'weakest'],
+    [/\bweakest\b/i, 'strongest'],
+    [/\bviable\b/i, 'not viable'],
+    [/\bnot viable\b/i, 'viable'],
+    [/\bflawed\b/i, 'not flawed'],
+    [/\bnot flawed\b/i, 'flawed']
+  ];
+  for (const [rx, repl] of swaps){
+    if (rx.test(c)) return c.replace(rx, repl);
+  }
+  return 'It is not true that ' + c.charAt(0).toLowerCase() + c.slice(1);
+}
 function summarizeResult(top, counters, others){
   const topScore = top.score;
   const bestCounter = counters[0]?.score ?? 0;
   const spread = (topScore - bestCounter);
-  let line1 = scoreStrength(topScore) + '.';
+  let lead = scoreStrength(topScore) + '.';
   if (bestCounter > 0.7 && spread < 0.08) {
-    line1 += ' Counter-evidence also scores highly, so the record remains contested.';
+    lead += ' Counter-evidence also scores highly, so the record remains contested.';
   } else if (bestCounter > 0.62) {
-    line1 += ' Counter-evidence is meaningful, but weaker than the leading support.';
+    lead += ' Counter-evidence is meaningful, but weaker than the leading support.';
   } else {
-    line1 += ' Counter-evidence is present, but materially weaker than the leading support.';
+    lead += ' Counter-evidence is present, but materially weaker than the leading support.';
   }
+  const supportAxis = topScore >= 0.8 ? 'Strong primary support' :
+                      topScore >= 0.65 ? 'Meaningful primary support' :
+                      topScore >= 0.45 ? 'Partial primary support' : 'Weak primary support';
+  const counterAxis = bestCounter >= 0.8 ? 'Strong counter-signal' :
+                      bestCounter >= 0.65 ? 'Meaningful counter-signal' :
+                      bestCounter >= 0.45 ? 'Partial counter-signal' : 'Weak counter-signal';
   const tension = bestCounter > 0.7 ? 'High contention across the record' :
                   bestCounter > 0.62 ? 'Mixed record with notable tension' :
                   'Leading interpretation is more stable than the alternatives';
-  const supportType = topScore >= 0.8 ? 'Strong primary support' :
-                      topScore >= 0.65 ? 'Meaningful primary support' :
-                      topScore >= 0.45 ? 'Partial primary support' : 'Weak primary support';
   const variance = others.length ? (topScore - (others[Math.min(2, others.length-1)]?.score ?? topScore)) : 0;
-  return { line1, supportType, tension, spread, variance, bestCounter };
+  return { lead, supportAxis, counterAxis, tension, spread, variance, bestCounter };
 }
-function dedupeBySource(results, limit=5){
+function uniqueKeyForResult(r){
+  return `${r.doc?.id || r.hit?.source || ''}::${cleanText(r.chunk).slice(0,120)}`;
+}
+function dedupeBySourceAndExcerpt(results, limit=5){
   const out=[], seen=new Set();
   for(const r of results){
-    const key = r.doc?.id || r.hit?.source || r.doc?.source;
+    const key = uniqueKeyForResult(r);
     if(seen.has(key)) continue;
     seen.add(key);
     out.push(r);
@@ -1744,7 +1841,6 @@ function prefilterDocsByVector(queryVec, docs, limit){
   const scored = docs.map(doc => ({ doc, sim: Array.isArray(doc.vector) ? cosine(queryVec, doc.vector) : -2 }))
                      .sort((a,b)=>b.sim-a.sim);
   const top = scored.slice(0, Math.min(limit, scored.length)).map(x=>x.doc);
-  // if many docs missing vectors, top may be bad; backfill from original docs order
   if (top.length < Math.min(limit, docs.length)){
     const seen = new Set(top.map(d=>d.__id));
     for(const d of docs){
@@ -1755,10 +1851,8 @@ function prefilterDocsByVector(queryVec, docs, limit){
   }
   return top;
 }
-function cacheKey(claim, filter){ return `${CACHE_VERSION}::${filter}::${cleanText(claim)}`; }
-function saveCache(key, payload){
-  try{ localStorage.setItem(key, JSON.stringify({ts:Date.now(), payload})); }catch(e){}
-}
+function cacheKey(claim, filter, adminOnly){ return `${CACHE_VERSION}::${filter}::${adminOnly ? 'admin' : 'allmodes'}::${cleanText(claim)}`; }
+function saveCache(key, payload){ try{ localStorage.setItem(key, JSON.stringify({ts:Date.now(), payload})); }catch(e){} }
 function loadCache(key){
   try{
     const raw = localStorage.getItem(key);
@@ -1769,9 +1863,9 @@ function loadCache(key){
 }
 function reviveResults(payloadSection){
   return (payloadSection || []).map(r => {
-    const hit = CORPUS.find(x => x.__id === r.hitId) || {__id:r.hitId,text:r.chunk,cat:r.cat,source:r.source,title:r.title};
+    const hit = CORPUS.find(x => x.__id === r.hitId) || {__id:r.hitId,text:r.chunk,cat:r.cat,source:r.source,title:r.title,meta:r.meta||{}};
     const doc = DOC_INDEX.get(r.docId) || {
-      id:r.docId, title:r.docTitle, source:r.source, corpusLabel:r.cat, body:r.docBody || r.chunk, items:[hit]
+      id:r.docId, title:r.docTitle, source:r.source, corpusLabel:r.cat, body:r.docBody || r.chunk, items:[hit], meta:r.meta||{}
     };
     return { doc, hit, chunk:r.chunk, score:r.score, matchIdx:r.matchIdx || 0 };
   });
@@ -1780,7 +1874,8 @@ function serializeResults(list){
   return (list || []).map(r => ({
     docId:r.doc.id, docTitle:r.doc.title, docBody:r.doc.body?.slice(0,4000) || '',
     hitId:r.hit.__id, chunk:r.chunk, score:r.score, matchIdx:r.matchIdx || 0,
-    cat:r.hit.cat || r.doc.corpusLabel, source:r.hit.source || r.doc.source, title:r.hit.title || r.doc.title
+    cat:r.hit.cat || r.doc.corpusLabel, source:r.hit.source || r.doc.source, title:r.hit.title || r.doc.title,
+    meta:r.doc.meta || r.hit.meta || {}
   }));
 }
 async function compareClaim(query, docs, limit=12){
@@ -1813,7 +1908,8 @@ async function compareClaim(query, docs, limit=12){
       source: hit.source,
       corpusLabel: hit.cat,
       body: String(hit.text || ''),
-      items:[hit]
+      items:[hit],
+      meta: hit.meta || inferMeta(hit)
     };
     const matchIdx = docObj.items ? docObj.items.findIndex(x => x.__id === hit.__id) : 0;
     results.push({ doc: docObj, hit, chunk: cleanText(hit.text), score: item.score, matchIdx });
@@ -1834,7 +1930,7 @@ function renderRows(rows, kind){
           <div class="r-row-k">${esc(scoreCompact(r.score))}</div>
           <div class="r-row-title">${esc(r.doc.title)}</div>
           <div class="r-row-meta">${esc(truncateSmart(r.chunk, 120))}</div>
-          <div class="r-also-doc">${esc(r.hit.cat || r.doc.corpusLabel || 'Source')}</div>
+          <div class="r-also-doc">${esc((r.doc.meta?.docType || r.hit.meta?.docType || 'RECORD') + ' · ' + (r.doc.meta?.author || r.hit.meta?.author || 'Record') + ' · ' + (r.doc.meta?.stage || r.hit.meta?.stage || 'general'))}</div>
         </div>
         <div class="r-also-sc">${r.score.toFixed(3)}</div>
       </div>
@@ -1852,6 +1948,14 @@ function renderProgressiveShell(displayClaim){
     '</div>';
   r.classList.add('on');
 }
+function metaBadges(meta){
+  if (!meta) return '';
+  return '<div class="sig-badges">' +
+    `<span class="sig-badge">${esc(meta.docType || 'RECORD')}</span>` +
+    `<span class="sig-badge">${esc(meta.author || 'Record')}</span>` +
+    `<span class="sig-badge">${esc(meta.stage || 'general')}</span>` +
+  '</div>';
+}
 function renderClaim(displayClaim, top, supportingElse, counterResults, ms, total, cached=false, prefilteredCount=0){
   const r = document.getElementById('result');
   if (!top){
@@ -1861,6 +1965,7 @@ function renderClaim(displayClaim, top, supportingElse, counterResults, ms, tota
   }
   const windowed = buildContextWindow(top.doc, top.matchIdx);
   const synthesis = summarizeResult(top, counterResults, supportingElse);
+
   CURRENT_DOC = {
     doc: top.doc,
     hit: top.hit,
@@ -1875,14 +1980,20 @@ function renderClaim(displayClaim, top, supportingElse, counterResults, ms, tota
     '<div class="r-summary">' +
       '<div class="r-summary-head">Record synthesis</div>' +
       '<div class="r-summary-grid">' +
-        '<div class="r-summary-text">'+esc(synthesis.line1)+'</div>' +
+        '<div class="r-summary-text">'+esc(synthesis.lead)+'</div>' +
         '<div class="r-summary-points">' +
-          '<div class="r-point"><div class="r-point-k">Primary signal</div><div class="r-point-v">'+esc(synthesis.supportType)+'</div></div>' +
-          '<div class="r-point"><div class="r-point-k">Key tension</div><div class="r-point-v">'+esc(synthesis.tension)+'</div></div>' +
-          '<div class="r-point"><div class="r-point-k">Trust signals</div><div class="r-point-v">'+total+' passages loaded · '+prefilteredCount+' compared per pass · support/counter spread '+synthesis.spread.toFixed(3)+' · top-three variance '+synthesis.variance.toFixed(3)+'</div></div>' +
+          '<div class="r-axis"><div class="r-axis-k">Support signal</div><div class="r-axis-v">'+esc(synthesis.supportAxis)+'</div></div>' +
+          '<div class="r-axis"><div class="r-axis-k">Counter signal</div><div class="r-axis-v">'+esc(synthesis.counterAxis)+'</div></div>' +
+          '<div class="r-axis"><div class="r-axis-k">Key tension</div><div class="r-axis-v">'+esc(synthesis.tension)+'</div></div>' +
+          '<div class="r-axis"><div class="r-axis-k">Trust signals</div><div class="r-axis-v">'+total+' passages loaded · '+prefilteredCount+' compared per pass · support/counter spread '+synthesis.spread.toFixed(3)+' · top-three variance '+synthesis.variance.toFixed(3)+'</div></div>' +
         '</div>' +
       '</div>' +
       '<div class="r-summary-status"><span class="cache-note">'+(cached ? 'Loaded from local cache' : 'Fresh compare run')+'</span></div>' +
+      '<div class="stress-row">' +
+        '<button class="stress-btn" type="button" onclick="stressInvert()">Invert claim</button>' +
+        '<button class="stress-btn" type="button" onclick="stressStrongestCounter()">Test strongest counter</button>' +
+        '<button class="stress-btn" type="button" onclick="stressAdministrativeOnly()">'+(adminOnlyMode ? 'Show all record types' : 'Show only administrative record')+'</button>' +
+      '</div>' +
     '</div>' +
     '<div class="r-card">' +
       '<div class="r-tag">'+esc(top.hit.cat || top.doc.corpusLabel || 'Source')+'</div>' +
@@ -1890,10 +2001,11 @@ function renderClaim(displayClaim, top, supportingElse, counterResults, ms, tota
         '<div class="r-arg-copy">' +
           '<div class="r-arg-k">Argument surfaced from record</div>' +
           '<div class="r-arg-title">'+esc(truncateSmart(windowed.match, 110))+'</div>' +
+          '<div class="r-source-title">Source: '+esc(top.doc.title)+'</div>' +
+          metaBadges(top.doc.meta || top.hit.meta) +
         '</div>' +
         '<div class="r-support-badge">'+esc(scoreStrength(top.score))+'</div>' +
       '</div>' +
-      '<div class="r-source-line"><div class="r-source-title">Source: '+esc(top.doc.title)+'</div></div>' +
       '<div class="r-match"><div class="r-match-lbl">Best supporting passage</div><div class="r-match-text">'+esc(windowed.match)+'</div></div>' +
       (windowed.context ? '<div class="r-context"><div class="r-context-lbl">Context from source</div><div class="r-context-text">'+esc(windowed.context)+'</div></div>' : '') +
       '<div class="r-meta">' +
@@ -1926,6 +2038,7 @@ function renderClaim(displayClaim, top, supportingElse, counterResults, ms, tota
   r.classList.add('on');
   animScore(top.score);
 }
+
 async function go(){
   const q = document.getElementById('q').value.trim();
   if (!q || !CORPUS.length) return;
@@ -1942,7 +2055,7 @@ async function runClaim(fullClaim, displayClaim, opts={}){
   loading.classList.add('on');
 
   const allDocs = activeCorpus();
-  const ckey = cacheKey(fullClaim, activeFilter);
+  const ckey = cacheKey(fullClaim, activeFilter, adminOnlyMode);
   const cached = loadCache(ckey);
   if (cached){
     const top = reviveResults(cached.top)[0];
@@ -1958,25 +2071,23 @@ async function runClaim(fullClaim, displayClaim, opts={}){
     document.getElementById('loading-count').textContent = allDocs.length + ' passages';
     const qVec = await embedText(fullClaim);
     const supportCandidates = prefilterDocsByVector(qVec, allDocs, FILTER_PREFILTER_LIMIT);
-    const supportPromise = compareClaim(fullClaim, supportCandidates, 14);
     document.getElementById('progress-note').textContent = `Primary claim narrowed from ${allDocs.length} passages to ${supportCandidates.length}, then sent to compare…`;
+    const supportPromise = compareClaim(fullClaim, supportCandidates, 14);
 
     const counterQueries = claimToCounterPrompts(fullClaim);
-    const counterPrepPromises = counterQueries.map(async cq => {
+    const counterPrepared = await Promise.all(counterQueries.map(async cq => {
       const vec = await embedText(cq);
       const narrowed = prefilterDocsByVector(vec, allDocs, COUNTER_PREFILTER_LIMIT);
       return { cq, narrowed };
-    });
-    const counterPrepared = await Promise.all(counterPrepPromises);
+    }));
     document.getElementById('progress-note').textContent = `Counter-evidence prompts narrowed to ${COUNTER_PREFILTER_LIMIT} passages each. Running compare calls in parallel…`;
-
     const counterComparePromises = counterPrepared.map(p => compareClaim(p.cq, p.narrowed, 8));
     const [supportResults, ...counterArrays] = await Promise.all([supportPromise, ...counterComparePromises]);
 
     const counterPool = counterArrays.flat();
     const top = supportResults[0];
-    const counterResults = dedupeBySource(counterPool.filter(x => !(top && x.doc.id === top.doc.id && x.hit.__id === top.hit.__id)), 5);
-    const supportingElse = dedupeBySource(supportResults.slice(1), 5);
+    const counterResults = dedupeBySourceAndExcerpt(counterPool.filter(x => !(top && x.doc.id === top.doc.id && x.hit.__id === top.hit.__id)), 5);
+    const supportingElse = dedupeBySourceAndExcerpt(supportResults.slice(1), 5);
     const ms = Math.round(performance.now() - t0);
 
     renderClaim(displayClaim, top, supportingElse, counterResults, ms, allDocs.length, false, supportCandidates.length);
@@ -2019,6 +2130,24 @@ function applyAngle(role){
   input.value = (base ? base + ' ' : '') + 'As a ' + role;
   input.focus();
   input.setSelectionRange(input.value.length, input.value.length);
+}
+function stressInvert(){
+  const current = document.getElementById('rerunQ')?.value || lastClaim || document.getElementById('q').value || '';
+  const inverted = invertClaim(current);
+  document.getElementById('q').value = inverted;
+  runClaim(inverted, inverted, { preserveResult:false });
+}
+function stressStrongestCounter(){
+  if (!LAST_RENDER?.counterResults?.length) return;
+  const strongest = LAST_RENDER.counterResults[0].chunk;
+  document.getElementById('q').value = strongest;
+  runClaim(strongest, strongest, { preserveResult:false });
+}
+function stressAdministrativeOnly(){
+  adminOnlyMode = !adminOnlyMode;
+  const claim = document.getElementById('rerunQ')?.value || lastClaim || document.getElementById('q').value || '';
+  if (!claim) return;
+  runClaim(claim, claim, { preserveResult:false });
 }
 function rerun(){
   const input = document.getElementById('rerunQ');
@@ -2102,6 +2231,7 @@ function newSearch(){
   document.getElementById('q').value = '';
   document.getElementById('result').classList.remove('on');
   document.getElementById('sugs').style.display = 'block';
+  adminOnlyMode = false;
   setFilter('all');
   window.scrollTo({top:0, behavior:'smooth'});
 }
