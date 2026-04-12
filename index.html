@@ -1287,6 +1287,49 @@ body{min-height:100vh;}
 }
 .stress-btn:hover{background:rgba(10,10,10,.03)}
 
+
+/* v5 explanation */
+.comp-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:14px;
+}
+.comp-box{
+  border-top:1px solid var(--line2);
+  padding-top:10px;
+}
+.comp-k{
+  font:400 9px/1 var(--mono);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink4);
+  margin-bottom:6px;
+}
+.comp-v{
+  font:400 13px/1.55 var(--sans);
+  color:var(--ink2);
+}
+.reason-list{
+  display:grid;
+  gap:6px;
+  margin-top:8px;
+}
+.reason-item{
+  font:400 13px/1.5 var(--sans);
+  color:var(--ink2);
+}
+.r-row-type{
+  font:400 9px/1 var(--mono);
+  color:var(--ink4);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  margin-bottom:5px;
+}
+@media (max-width: 900px){
+  .comp-grid{grid-template-columns:1fr;}
+}
+
 </style>
 </head>
 <body>
@@ -1552,8 +1595,7 @@ const TITLE_MAP = {
 
 const FILTER_PREFILTER_LIMIT = 96;
 const COUNTER_PREFILTER_LIMIT = 72;
-const CACHE_VERSION = 'v4';
-const ADMIN_ONLY_FILTER = '__ADMIN_ONLY__';
+const CACHE_VERSION = 'v5';
 
 let activeFilter = 'all';
 let adminOnlyMode = false;
@@ -1591,16 +1633,16 @@ function truncateSmart(raw, maxLen){
   return cut.trim() + '…';
 }
 function scoreStrength(score){
-  if (score >= 0.8) return 'The highest-coherence passages strongly support this claim';
-  if (score >= 0.65) return 'The highest-coherence passages meaningfully support this claim';
-  if (score >= 0.45) return 'The highest-coherence passages partially support this claim';
-  return 'Support in the current record is weak';
+  if (score >= 0.8) return 'The highest-coherence passages strongly align with this claim';
+  if (score >= 0.65) return 'The highest-coherence passages meaningfully align with this claim';
+  if (score >= 0.45) return 'The highest-coherence passages partially align with this claim';
+  return 'Alignment in the current record is weak';
 }
 function scoreCompact(score){
-  if (score >= 0.8) return 'Strong support';
-  if (score >= 0.65) return 'Meaningful support';
-  if (score >= 0.45) return 'Partial support';
-  return 'Weak support';
+  if (score >= 0.8) return 'Strong alignment';
+  if (score >= 0.65) return 'Meaningful alignment';
+  if (score >= 0.45) return 'Partial alignment';
+  return 'Weak alignment';
 }
 
 function inferMeta(item){
@@ -1650,6 +1692,7 @@ function buildDocIndex(){
   });
   DOC_INDEX = new Map(DOCS.map(d => [d.id, d]));
 }
+
 function buildFiltersFromCorpus(){
   const counts = new Map();
   for (const item of CORPUS){
@@ -1760,30 +1803,55 @@ function invertClaim(claim){
   }
   return 'It is not true that ' + c.charAt(0).toLowerCase() + c.slice(1);
 }
-function summarizeResult(top, counters, others){
+
+function summarizeResult(claim, top, counters, others){
   const topScore = top.score;
   const bestCounter = counters[0]?.score ?? 0;
   const spread = (topScore - bestCounter);
-  let lead = scoreStrength(topScore) + '.';
-  if (bestCounter > 0.7 && spread < 0.08) {
-    lead += ' Counter-evidence also scores highly, so the record remains contested.';
-  } else if (bestCounter > 0.62) {
-    lead += ' Counter-evidence is meaningful, but weaker than the leading support.';
+  const topMeta = top.doc.meta || top.hit.meta || {};
+  const counterMeta = counters[0]?.doc?.meta || counters[0]?.hit?.meta || {};
+
+  let lead = '';
+  if (topMeta.docType === 'ADMINISTRATIVE' && topMeta.stage === 'fiscal'){
+    lead = `The strongest evidence comes from ${topMeta.author || 'administrative'} requirements documents that frame incorporation through fiscal mitigation and statutory process, rather than through a finalized outcome document.`;
+  } else if (topMeta.docType === 'POLITICAL'){
+    lead = `The strongest evidence comes from political framing rather than a neutral administrative conclusion, so the claim is being driven more by argument than final determination.`;
+  } else if (topMeta.docType === 'LEGAL'){
+    lead = `The strongest evidence comes from legal record material, which means the claim is being shaped through litigation posture rather than purely administrative process.`;
   } else {
-    lead += ' Counter-evidence is present, but materially weaker than the leading support.';
+    lead = `The strongest evidence comes from ${String((topMeta.docType || 'record').toLowerCase())} material authored by ${topMeta.author || 'the record'}, not from a generalized summary layer.`;
   }
-  const supportAxis = topScore >= 0.8 ? 'Strong primary support' :
-                      topScore >= 0.65 ? 'Meaningful primary support' :
-                      topScore >= 0.45 ? 'Partial primary support' : 'Weak primary support';
-  const counterAxis = bestCounter >= 0.8 ? 'Strong counter-signal' :
-                      bestCounter >= 0.65 ? 'Meaningful counter-signal' :
-                      bestCounter >= 0.45 ? 'Partial counter-signal' : 'Weak counter-signal';
-  const tension = bestCounter > 0.7 ? 'High contention across the record' :
-                  bestCounter > 0.62 ? 'Mixed record with notable tension' :
-                  'Leading interpretation is more stable than the alternatives';
+
+  let tensionSpecific = '';
+  if (topMeta.docType === 'ADMINISTRATIVE' && counterMeta.docType === 'POLITICAL') {
+    tensionSpecific = 'Administrative requirements frame the issue procedurally, while political documents push those requirements toward a stronger conclusion.';
+  } else if (topMeta.docType === 'ADMINISTRATIVE' && counterMeta.docType === 'ADMINISTRATIVE') {
+    tensionSpecific = 'The conflict is internal to the administrative record: some passages define risk and mitigation, while others define process and eventual evaluation.';
+  } else if (counterMeta.docType) {
+    tensionSpecific = `${topMeta.docType || 'Record'} material leads the alignment signal, while ${String(counterMeta.docType || 'other').toLowerCase()} material supplies the main contrary reading.`;
+  } else {
+    tensionSpecific = 'The record contains a real interpretive split rather than a single clean direction.';
+  }
+
+  const supportAxis = topScore >= 0.8 ? 'Strong aligned evidence' :
+                      topScore >= 0.65 ? 'Meaningful aligned evidence' :
+                      topScore >= 0.45 ? 'Partial aligned evidence' : 'Weak aligned evidence';
+  const counterAxis = bestCounter >= 0.8 ? 'Strong contrary evidence' :
+                      bestCounter >= 0.65 ? 'Meaningful contrary evidence' :
+                      bestCounter >= 0.45 ? 'Partial contrary evidence' : 'Weak contrary evidence';
   const variance = others.length ? (topScore - (others[Math.min(2, others.length-1)]?.score ?? topScore)) : 0;
-  return { lead, supportAxis, counterAxis, tension, spread, variance, bestCounter };
+
+  return {
+    lead,
+    supportAxis,
+    counterAxis,
+    tensionSpecific,
+    spread,
+    variance,
+    bestCounter
+  };
 }
+
 function uniqueKeyForResult(r){
   return `${r.doc?.id || r.hit?.source || ''}::${cleanText(r.chunk).slice(0,120)}`;
 }
@@ -1819,21 +1887,17 @@ function cosine(a,b){
 async function embedText(text){
   const key = cleanText(text);
   if (EMBED_CACHE.has(key)) return EMBED_CACHE.get(key);
-
   const r = await fetch(EMBED_API, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ texts: [key], use_freq: true })
   });
-
   const raw = await r.text();
   if(!r.ok) throw new Error('EMBED API ' + r.status + (raw ? ' · ' + raw.slice(0, 180) : ''));
-
   let d = {};
   try { d = JSON.parse(raw); } catch(e) {}
   const vec = (d.vectors || d.embeddings || d.data)?.[0];
   if(!Array.isArray(vec)) throw new Error('Embed response missing vector');
-
   EMBED_CACHE.set(key, vec);
   return vec;
 }
@@ -1917,17 +1981,46 @@ async function compareClaim(query, docs, limit=12){
   }
   return results;
 }
+
+function countComposition(results){
+  const counts = { ADMINISTRATIVE:0, POLITICAL:0, LEGAL:0, OTHER:0 };
+  for(const r of results){
+    const t = r.doc?.meta?.docType || r.hit?.meta?.docType || 'OTHER';
+    if (Object.prototype.hasOwnProperty.call(counts, t)) counts[t] += 1;
+    else counts.OTHER += 1;
+  }
+  const total = results.length || 1;
+  return Object.entries(counts)
+    .filter(([,v]) => v > 0)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([k,v]) => `${Math.round((v/total)*100)}% ${k.toLowerCase()}`)
+    .join(' · ');
+}
+
+function whyTopWon(claim, top){
+  const reasons = [];
+  const lcClaim = cleanText(claim).toLowerCase();
+  const lcChunk = cleanText(top.chunk).toLowerCase();
+  const claimTerms = lcClaim.split(/[^a-z0-9]+/).filter(x => x.length > 4);
+  const overlaps = [...new Set(claimTerms.filter(t => lcChunk.includes(t)))].slice(0,4);
+  if (overlaps.length) reasons.push(`Direct term overlap: ${overlaps.join(', ')}`);
+  reasons.push(`Document type: ${String(top.doc?.meta?.docType || top.hit?.meta?.docType || 'record').toLowerCase()}`);
+  reasons.push(`Author/source role: ${top.doc?.meta?.author || top.hit?.meta?.author || 'record'}`);
+  reasons.push(`Stage of record: ${top.doc?.meta?.stage || top.hit?.meta?.stage || 'general'}`);
+  return reasons;
+}
+
 function renderRows(rows, kind){
   if (!rows.length) return '';
   const avg = (rows.reduce((a,b)=>a+b.score,0)/rows.length).toFixed(3);
-  const title = kind === 'counter' ? 'Counter-evidence in the record' : 'What else the record says';
+  const title = kind === 'counter' ? 'Contrary evidence in the record' : 'What else the record says';
   const stat = kind === 'counter' ? `avg ${avg} coherence · alternative readings` : `avg ${avg} coherence · additional support`;
   return '<div class="r-also"><div class="r-list-head"><div class="r-also-head">'+title+'</div><div class="r-list-stat">'+stat+'</div></div>' +
     rows.map((r,i)=>`
       <div class="r-also-row" onclick="openOtherDocByGroup('${kind}',${i})">
         <div class="r-also-n">${String(i+1).padStart(2,'0')}</div>
         <div class="r-also-body">
-          <div class="r-row-k">${esc(scoreCompact(r.score))}</div>
+          <div class="r-row-type">${esc(scoreCompact(r.score))}</div>
           <div class="r-row-title">${esc(r.doc.title)}</div>
           <div class="r-row-meta">${esc(truncateSmart(r.chunk, 120))}</div>
           <div class="r-also-doc">${esc((r.doc.meta?.docType || r.hit.meta?.docType || 'RECORD') + ' · ' + (r.doc.meta?.author || r.hit.meta?.author || 'Record') + ' · ' + (r.doc.meta?.stage || r.hit.meta?.stage || 'general'))}</div>
@@ -1943,7 +2036,7 @@ function renderProgressiveShell(displayClaim){
     '<div class="r-q"><span class="r-q-lbl">Claim</span><span class="r-q-val">'+esc(displayClaim)+'</span></div>' +
     '<div class="r-summary">' +
       '<div class="r-summary-head">Record synthesis</div>' +
-      '<div class="loading-pill"><span class="loading-dot"></span><span>Evaluating support, counter-evidence, and trust signals</span></div>' +
+      '<div class="loading-pill"><span class="loading-dot"></span><span>Evaluating aligned and contrary evidence</span></div>' +
       '<div class="r-summary-status cache-note" id="progress-note">Running staged retrieval to narrow the record before authoritative compare…</div>' +
     '</div>';
   r.classList.add('on');
@@ -1956,6 +2049,7 @@ function metaBadges(meta){
     `<span class="sig-badge">${esc(meta.stage || 'general')}</span>` +
   '</div>';
 }
+
 function renderClaim(displayClaim, top, supportingElse, counterResults, ms, total, cached=false, prefilteredCount=0){
   const r = document.getElementById('result');
   if (!top){
@@ -1963,8 +2057,12 @@ function renderClaim(displayClaim, top, supportingElse, counterResults, ms, tota
     r.classList.add('on');
     return;
   }
+
   const windowed = buildContextWindow(top.doc, top.matchIdx);
-  const synthesis = summarizeResult(top, counterResults, supportingElse);
+  const synthesis = summarizeResult(displayClaim, top, counterResults, supportingElse);
+  const allVisible = [top].concat(supportingElse).concat(counterResults);
+  const composition = countComposition(allVisible);
+  const reasons = whyTopWon(displayClaim, top);
 
   CURRENT_DOC = {
     doc: top.doc,
@@ -1982,11 +2080,15 @@ function renderClaim(displayClaim, top, supportingElse, counterResults, ms, tota
       '<div class="r-summary-grid">' +
         '<div class="r-summary-text">'+esc(synthesis.lead)+'</div>' +
         '<div class="r-summary-points">' +
-          '<div class="r-axis"><div class="r-axis-k">Support signal</div><div class="r-axis-v">'+esc(synthesis.supportAxis)+'</div></div>' +
-          '<div class="r-axis"><div class="r-axis-k">Counter signal</div><div class="r-axis-v">'+esc(synthesis.counterAxis)+'</div></div>' +
-          '<div class="r-axis"><div class="r-axis-k">Key tension</div><div class="r-axis-v">'+esc(synthesis.tension)+'</div></div>' +
-          '<div class="r-axis"><div class="r-axis-k">Trust signals</div><div class="r-axis-v">'+total+' passages loaded · '+prefilteredCount+' compared per pass · support/counter spread '+synthesis.spread.toFixed(3)+' · top-three variance '+synthesis.variance.toFixed(3)+'</div></div>' +
+          '<div class="r-axis"><div class="r-axis-k">Aligned evidence</div><div class="r-axis-v">'+esc(synthesis.supportAxis)+'</div></div>' +
+          '<div class="r-axis"><div class="r-axis-k">Contrary evidence</div><div class="r-axis-v">'+esc(synthesis.counterAxis)+'</div></div>' +
+          '<div class="r-axis"><div class="r-axis-k">Primary tension in record</div><div class="r-axis-v">'+esc(synthesis.tensionSpecific)+'</div></div>' +
+          '<div class="r-axis"><div class="r-axis-k">Trust signals</div><div class="r-axis-v">'+total+' passages loaded · '+prefilteredCount+' compared per pass · aligned/contrary spread '+synthesis.spread.toFixed(3)+' · top-three variance '+synthesis.variance.toFixed(3)+'</div></div>' +
         '</div>' +
+      '</div>' +
+      '<div class="comp-grid">' +
+        '<div class="comp-box"><div class="comp-k">Evidence composition</div><div class="comp-v">'+esc(composition)+'</div></div>' +
+        '<div class="comp-box"><div class="comp-k">Why the top result ranks highest</div><div class="reason-list">' + reasons.map(x => '<div class="reason-item">'+esc(x)+'</div>').join('') + '</div></div>' +
       '</div>' +
       '<div class="r-summary-status"><span class="cache-note">'+(cached ? 'Loaded from local cache' : 'Fresh compare run')+'</span></div>' +
       '<div class="stress-row">' +
@@ -2072,15 +2174,16 @@ async function runClaim(fullClaim, displayClaim, opts={}){
     const qVec = await embedText(fullClaim);
     const supportCandidates = prefilterDocsByVector(qVec, allDocs, FILTER_PREFILTER_LIMIT);
     document.getElementById('progress-note').textContent = `Primary claim narrowed from ${allDocs.length} passages to ${supportCandidates.length}, then sent to compare…`;
-    const supportPromise = compareClaim(fullClaim, supportCandidates, 14);
 
+    const supportPromise = compareClaim(fullClaim, supportCandidates, 14);
     const counterQueries = claimToCounterPrompts(fullClaim);
     const counterPrepared = await Promise.all(counterQueries.map(async cq => {
       const vec = await embedText(cq);
       const narrowed = prefilterDocsByVector(vec, allDocs, COUNTER_PREFILTER_LIMIT);
       return { cq, narrowed };
     }));
-    document.getElementById('progress-note').textContent = `Counter-evidence prompts narrowed to ${COUNTER_PREFILTER_LIMIT} passages each. Running compare calls in parallel…`;
+    document.getElementById('progress-note').textContent = `Contrary-evidence prompts narrowed to ${COUNTER_PREFILTER_LIMIT} passages each. Running compare calls in parallel…`;
+
     const counterComparePromises = counterPrepared.map(p => compareClaim(p.cq, p.narrowed, 8));
     const [supportResults, ...counterArrays] = await Promise.all([supportPromise, ...counterComparePromises]);
 
@@ -2105,6 +2208,7 @@ async function runClaim(fullClaim, displayClaim, opts={}){
     loading.classList.remove('on');
   }
 }
+
 function animScore(target){
   const el = document.getElementById('snum');
   if (!el) return;
@@ -2158,6 +2262,7 @@ function rerun(){
   if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
   runClaim(fullQ, fullQ, { preserveResult:true }).then(() => window.scrollTo(0, y));
 }
+
 function docHtml(body, passage, full){
   const safeBody = esc(body || '');
   const safePass = esc((passage || '').trim());
@@ -2251,6 +2356,7 @@ document.addEventListener('click', e => {
   const modal = document.getElementById('doc-modal');
   if (modal && e.target === modal) closeDoc();
 });
+
 loadCorpus();
 </script>
 
