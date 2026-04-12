@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>lajolla.city — Ask anything about La Jolla becoming its own city</title>
-<meta name="description" content="The research desk for the La Jolla cityhood movement. Ask anything. Real documents. Not the internet.">
+<title>lajolla.city — Test a claim against the public record</title>
+<meta name="description" content="Test claims about La Jolla cityhood against the public record. Real documents. Ranked evidence. Multiple perspectives.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='78' font-size='90' text-anchor='middle' font-family='Georgia,serif' font-weight='400'%3EL%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
@@ -1109,6 +1109,27 @@ body{min-height:100vh;}
   font:300 13px/1.6 var(--sans);color:var(--ink3);letter-spacing:-.004em;
 }
 
+
+/* claim engine refinements */
+.r-q-lbl{content:'';}
+.r-counter .r-also-head{background:rgba(10,10,10,.02);}
+.r-counter .r-also-row{background:rgba(10,10,10,.01);}
+.r-counter .r-also-row:hover{background:rgba(10,10,10,.03);}
+.r-strength{max-width:300px;text-align:right;}
+.r-strength.strong{color:var(--ink);}
+.r-strength.meaningful{color:var(--ink2);}
+.r-strength.partial{color:var(--ink3);}
+.r-strength.weak{color:#8a6d3b;}
+.r-title{overflow-wrap:anywhere;}
+.r-source-name{overflow-wrap:anywhere;}
+.r-claim-note{
+  font:300 13px/1.6 var(--sans);
+  color:var(--ink3);
+  letter-spacing:-.004em;
+  margin-bottom:14px;
+}
+.search-input::placeholder{font-style:italic;}
+
 </style>
 </head>
 <body>
@@ -1193,13 +1214,13 @@ body{min-height:100vh;}
     <text class="b-label" x="206" y="48">Del Mar line</text>
     <text class="b-label" x="206" y="332">Pacific Beach line</text>
   </svg>
-      <h1 class="hero-h">Search<br>the record<br>of <em>La&nbsp;Jolla becoming its&nbsp;own&nbsp;city.</em></h1>
-      <p class="hero-dek">A research desk for the incorporation effort. The LAFCO petition, the fiscal analysis, the legal record, and comparable city charters — each answer cites its source. Each question returns a consistent, source-backed passage.</p>
+      <h1 class="hero-h">Test<br>claims against<br>the <em>public record.</em></h1>
+      <p class="hero-dek">Test claims about La Jolla cityhood against the fiscal, legal, and procedural record. ARBITER ranks the passages that best support, weaken, or complicate a claim — with every result grounded in source material.</p>
 
       <!-- SEARCH (the only one) -->
       <div class="search" id="search-section">
         <input class="search-input" id="q"
-          placeholder="Ask about incorporation."
+          placeholder="Enter a claim about cityhood."
           autocomplete="off" autocorrect="off" spellcheck="false"
           onkeydown="if(event.key==='Enter')go()">
         <button class="search-go" onclick="go()" aria-label="Search">
@@ -1337,18 +1358,19 @@ body{min-height:100vh;}
 
 </div>
 
+
 <script>
 const API = 'https://api.arbiter.traut.ai/public/compare';
 const CORPUS_URL = './corpus.json';
 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-const DEFAULT_QUESTIONS = [
-  'What are LAFCO’s criteria for approving incorporation?',
+const DEFAULT_CLAIMS = [
   'Revenue neutrality makes incorporation unworkable',
   'San Diego’s strongest attack is procedural rather than fiscal',
   'The Berkson model is positive but assumption-heavy',
-  'What does the CFA need to prove?',
-  'How did LAFCO validate the signatures?'
+  'The CFA proves La Jolla is financially viable',
+  'The petition validation process was flawed',
+  'La Jolla can sustain cityhood financially'
 ];
 
 const TITLE_MAP = {
@@ -1356,6 +1378,7 @@ const TITLE_MAP = {
   'RFP 1212026':'LAFCO CFA Request for Proposals',
   'AgendaItem7b.pdf':'LAFCO Agenda Item 7b',
   'AgendaItem7b':'LAFCO Agenda Item 7b',
+  'Agendaltem7b':'LAFCO Agenda Item 7b',
   '5225LetterMayor.pdf':'Mayor Gloria Letter to LAFCO',
   '5225LetterMayor':'Mayor Gloria Letter to LAFCO',
   'Item 5g':'LAFCO Item 5g',
@@ -1363,7 +1386,9 @@ const TITLE_MAP = {
   'CertificateOfSufficiency.pdf':'Certificate of Sufficiency',
   'Certificate of Sufficiency':'Certificate of Sufficiency',
   'SAN DIEGO LAFCO Official Statement Oct 242025':'San Diego LAFCO Official Statement',
-  'Agendaltem7b':'LAFCO Agenda Item 7b'
+  'AmendedCertificate LaJolla 8625 (1)':'Amended Certificate of Sufficiency',
+  'AmendedCertificate LaJolla 8625':'Amended Certificate of Sufficiency',
+  'RFP1212026':'LAFCO CFA Request for Proposals'
 };
 
 let activeFilter = 'all';
@@ -1380,20 +1405,17 @@ function prettyTitle(raw){
   if (TITLE_MAP[s]) return TITLE_MAP[s];
   const base = s.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim();
   if (TITLE_MAP[base]) return TITLE_MAP[base];
-  if (/^[A-Za-z]+\d+[A-Za-z0-9]*$/.test(base)){
+  if (/^[A-Za-z]+[\dA-Za-z\s()]+$/.test(base) && !base.includes(' ')){
     return base.replace(/([a-z])([A-Z0-9])/g, '$1 $2').trim();
   }
   return base;
 }
 
-function canonTitle(entry){
-  return entry?.source || entry?.title || 'Source document';
-}
-
+function canonTitle(entry){ return entry?.source || entry?.title || 'Source document'; }
 function parseOrdinal(entry){
-  const t = String(entry?.title || '');
-  const m = t.match(/—\s*(\d+)\/\d+\s*$/);
-  return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
+  const t=String(entry?.title||'');
+  const m=t.match(/—\s*(\d+)\/\d+\s*$/);
+  return m ? parseInt(m[1],10) : Number.MAX_SAFE_INTEGER;
 }
 
 function buildDocIndex(){
@@ -1403,10 +1425,9 @@ function buildDocIndex(){
     if (!bySource.has(key)) bySource.set(key, []);
     bySource.get(key).push(item);
   }
-
-  DOCS = [...bySource.entries()].map(([key, items]) => {
-    items.sort((a,b) => parseOrdinal(a) - parseOrdinal(b));
-    const rawTitle = String(items[0]?.title || key).replace(/\s+—\s*\d+\/\d+\s*$/, '').trim() || key;
+  DOCS = [...bySource.entries()].map(([key, items])=>{
+    items.sort((a,b)=>parseOrdinal(a)-parseOrdinal(b));
+    const rawTitle = String(items[0]?.title || key).replace(/\s+—\s*\d+\/\d+\s*$/,'').trim() || key;
     return {
       id: key,
       source: items[0]?.source || key,
@@ -1414,301 +1435,284 @@ function buildDocIndex(){
       rawTitle,
       corpusLabel: items[0]?.cat || 'Record',
       items,
-      body: items.map(x => String(x.text || '').trim()).join('\n\n')
+      body: items.map(x=>String(x.text||'').trim()).join('\n\n')
     };
   });
-
-  DOC_INDEX = new Map(DOCS.map(d => [d.id, d]));
+  DOC_INDEX = new Map(DOCS.map(d=>[d.id,d]));
 }
 
 function buildFiltersFromCorpus(){
   const counts = new Map();
   for (const item of CORPUS){
     const cat = item.cat || 'Uncategorized';
-    counts.set(cat, (counts.get(cat) || 0) + 1);
+    counts.set(cat,(counts.get(cat)||0)+1);
   }
-  FILTERS = [...counts.entries()]
-    .map(([id, count]) => ({ id, label:id, count }))
-    .sort((a,b) => a.label.localeCompare(b.label));
+  FILTERS = [...counts.entries()].map(([id,count])=>({id,label:id,count}))
+    .sort((a,b)=>a.label.localeCompare(b.label));
 }
 
 function buildFilters(){
-  const wrap = document.getElementById('filters');
-  const total = CORPUS.length;
-  let out = '<span class="filters-lbl">Sources</span>';
+  const wrap=document.getElementById('filters');
+  if (!wrap) return;
+  const total=CORPUS.length;
+  let out='<span class="filters-lbl">Sources</span>';
   out += `<button class="filt ${activeFilter==='all'?'on':''}" data-id="all" onclick="setFilter('all')">All <span>${total}</span></button>`;
-  FILTERS.forEach(f => {
-    out += `<button class="filt ${activeFilter===f.id?'on':''}" data-id="${esc(f.id)}" onclick="setFilter(${JSON.stringify(f.id).replace(/"/g, '&quot;')})">${esc(f.label)} <span>${f.count}</span></button>`;
+  FILTERS.forEach(f=>{
+    out += `<button class="filt ${activeFilter===f.id?'on':''}" data-id="${esc(f.id)}" onclick="setFilter(${JSON.stringify(f.id).replace(/"/g,'&quot;')})">${esc(f.label)} <span>${f.count}</span></button>`;
   });
   wrap.innerHTML = out;
 }
 
 function setFilter(id){
-  activeFilter = id;
-  document.querySelectorAll('.filt').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+  activeFilter=id;
+  document.querySelectorAll('.filt').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
   buildSugs();
 }
 
 function buildSugs(){
-  const list = document.getElementById('sug-list');
-  let pool = [...DEFAULT_QUESTIONS];
-
-  if (activeFilter !== 'all'){
+  const list=document.getElementById('sug-list');
+  if (!list) return;
+  let pool=[...DEFAULT_CLAIMS];
+  if(activeFilter!=='all'){
     const keyword = String(activeFilter).toLowerCase();
-    if (keyword.includes('legal')) pool.unshift('What happened in the San Diego vs LAFCO litigation?');
-    if (keyword.includes('fiscal') || keyword.includes('budget')) pool.unshift('What does revenue neutrality require?');
-    if (keyword.includes('lafco')) pool.unshift('How many signatures were validated over the threshold?');
+    if(keyword.includes('legal')) pool.unshift('San Diego’s strongest attack is procedural rather than fiscal');
+    if(keyword.includes('fiscal') || keyword.includes('budget')) pool.unshift('Revenue neutrality makes incorporation unworkable');
+    if(keyword.includes('lafco')) pool.unshift('The petition validation process was flawed');
   }
-
-  pool = [...new Set(pool)].slice(0, 6);
+  pool=[...new Set(pool)].slice(0,6);
+  const lbl = document.querySelector('.sugs-lbl');
+  if (lbl) lbl.textContent = 'Try one of these claims';
   list.innerHTML = pool.map(q =>
-    `<div class="sug-row" onclick="setQ(${JSON.stringify(q).replace(/"/g, '&quot;')})">${esc(q)}<span class="sug-row-arrow">→</span></div>`
+    `<div class="sug-row" onclick="setQ(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}<span class="sug-row-arrow">→</span></div>`
   ).join('');
 }
 
-function setQ(q){
-  document.getElementById('q').value = q;
-  go();
-}
-
-function activeCorpus(){
-  if (activeFilter === 'all') return CORPUS;
-  return CORPUS.filter(d => (d.cat || 'Uncategorized') === activeFilter);
-}
+function setQ(q){ document.getElementById('q').value=q; go(); }
+function activeCorpus(){ return activeFilter==='all' ? CORPUS : CORPUS.filter(d=>(d.cat||'Uncategorized')===activeFilter); }
 
 async function loadCorpus(){
   try{
-    const r = await fetch(CORPUS_URL, { cache:'no-store' });
-    if (!r.ok) throw new Error(`Could not load corpus.json (${r.status})`);
-
-    CORPUS = await r.json();
-    if (!Array.isArray(CORPUS) || !CORPUS.length) throw new Error('corpus.json is empty');
-
-    CORPUS = CORPUS.map((item, idx) => ({
+    const r=await fetch(CORPUS_URL,{cache:'no-store'});
+    if(!r.ok) throw new Error(`Could not load corpus.json (${r.status})`);
+    CORPUS=await r.json();
+    if(!Array.isArray(CORPUS)||!CORPUS.length) throw new Error('corpus.json is empty');
+    CORPUS=CORPUS.map((item,idx)=>({
       ...item,
       __id: idx,
       cat: item.cat || 'Uncategorized',
       source: item.source || item.title || `Document ${idx+1}`
     }));
-
     buildDocIndex();
     buildFiltersFromCorpus();
     buildFilters();
     buildSugs();
-
-    const count = CORPUS.length;
-    const docs = new Set(CORPUS.map(x => x.source)).size;
-    const sug = document.getElementById('sugs');
-    if (sug && sug.querySelector('.sugs-lbl')){
-      sug.querySelector('.sugs-lbl').textContent = `Try one of these · ${count} passages · ${docs} source documents`;
-    }
-  } catch(e){
-    const sug = document.getElementById('sugs');
-    if (sug){
-      sug.innerHTML = `<div class="err">Corpus failed to load. ${esc(e.message)}. Make sure <code>corpus.json</code> is in the same folder as this HTML and the page is served over http/https.</div>`;
-    }
-    const filters = document.getElementById('filters');
-    if (filters) filters.innerHTML = '';
+    const count=CORPUS.length, docs=new Set(CORPUS.map(x=>x.source)).size;
+    const sug=document.getElementById('sugs');
+    const label=sug?.querySelector('.sugs-lbl');
+    if(label) label.textContent = `Try one of these claims · ${count} passages · ${docs} source documents`;
+  }catch(e){
+    const sug=document.getElementById('sugs');
+    if(sug) sug.innerHTML=`<div class="err">Corpus failed to load. ${esc(e.message)}. Make sure <code>corpus.json</code> is in the same folder as this HTML and the page is served over http/https.</div>`;
+    const filters=document.getElementById('filters'); if(filters) filters.innerHTML='';
   }
 }
 
-function makeCandidateText(item){
-  return String(item.text || '').replace(/\s+/g, ' ').trim();
+function makeCandidateText(item){ return String(item.text||'').replace(/\s+/g,' ').trim(); }
+function normalizeClaim(text){ return String(text||'').trim(); }
+function counterClaimText(claim){
+  const q = normalizeClaim(claim);
+  if (q.endsWith('?')) return `Passages in the record that weaken, complicate, or contradict: ${q}`;
+  return `Passages in the record that weaken, qualify, or contradict this claim: ${q}`;
+}
+
+async function runCompare(query, docs, limit=5, distinctSource=true){
+  const candidates = docs.map(makeCandidateText);
+  const textMap = new Map();
+  docs.forEach((doc, idx)=>{
+    const t = candidates[idx];
+    if(!textMap.has(t)) textMap.set(t, []);
+    textMap.get(t).push(doc);
+  });
+
+  const r = await fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ query, candidates })
+  });
+  if(!r.ok) throw new Error('API '+r.status);
+  const d = await r.json();
+  const ranked=(d.all||d.results||[]).slice().sort((a,b)=>b.score-a.score);
+
+  const results=[], seenPassages=new Set(), seenSources=new Set();
+  for(const item of ranked){
+    const queue=textMap.get(item.text);
+    if(!queue || !queue.length) continue;
+    const hit=queue.shift();
+    if(seenPassages.has(hit.__id)) continue;
+    seenPassages.add(hit.__id);
+
+    const docObj = DOC_INDEX.get(canonTitle(hit)) || {
+      id: canonTitle(hit),
+      title: prettyTitle(hit.title || hit.source || 'Source document'),
+      source: hit.source,
+      corpusLabel: hit.cat,
+      body: String(hit.text||''),
+      items:[hit]
+    };
+    const sourceKey = docObj.id || hit.source;
+    if(distinctSource && results.length>0 && seenSources.has(sourceKey)) continue;
+    seenSources.add(sourceKey);
+    const matchIdx = docObj.items ? docObj.items.findIndex(x=>x.__id===hit.__id) : 0;
+    results.push({ doc:docObj, hit, chunk:String(hit.text||'').trim(), score:item.score, matchIdx });
+    if(results.length>=limit) break;
+  }
+  return results;
 }
 
 async function go(){
-  const q = document.getElementById('q').value.trim();
-  if (!q || !CORPUS.length) return;
-  lastQ = q;
-  await runQ(q, q, { preserveResult:false });
+  const q=document.getElementById('q').value.trim();
+  if(!q || !CORPUS.length) return;
+  lastQ=q;
+  await runQ(q,q,{preserveResult:false});
 }
 
-async function runQ(fullQ, displayQ, opts = {}){
-  const preserveResult = !!opts.preserveResult;
-  document.getElementById('sugs').style.display = 'none';
-
-  const resultEl = document.getElementById('result');
-  if (preserveResult){
+async function runQ(fullQ, displayQ, opts={}){
+  const preserveResult=!!opts.preserveResult;
+  document.getElementById('sugs').style.display='none';
+  const resultEl=document.getElementById('result');
+  if(preserveResult){
     resultEl.classList.add('on');
-    resultEl.innerHTML = '<div class="r-card"><div class="r-tag">Searching this angle</div><div class="r-title">'+esc(displayQ)+'</div><div class="r-passage">Re-scoring the record through ARBITER…</div></div>';
+    resultEl.innerHTML='<div class="r-card"><div class="r-tag">Testing claim</div><div class="r-title">'+esc(displayQ)+'</div><div class="r-passage">Re-scoring the record through ARBITER…</div></div>';
   } else {
     resultEl.classList.remove('on');
   }
 
-  const loading = document.getElementById('loading');
-  loading.classList.add('on');
-
-  const docs = activeCorpus();
-  const candidates = docs.map(makeCandidateText);
-  const textMap = new Map();
-
-  docs.forEach((doc, idx) => {
-    const t = candidates[idx];
-    if (!textMap.has(t)) textMap.set(t, []);
-    textMap.get(t).push(doc);
-  });
-
-  document.getElementById('loading-count').textContent = docs.length + ' passages';
-
-  const t0 = performance.now();
-
+  const loading=document.getElementById('loading'); loading.classList.add('on');
+  const docs=activeCorpus();
+  document.getElementById('loading-count').textContent=docs.length+' passages';
+  const t0=performance.now();
   try{
-    const r = await fetch(API, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ query: fullQ, candidates })
-    });
-
-    if (!r.ok) throw new Error('API ' + r.status);
-
-    const d = await r.json();
-    const ms = Math.round(performance.now() - t0);
-    const ranked = (d.all || d.results || []).slice().sort((a,b) => b.score - a.score);
-
-    const results = [];
-    const seenPassages = new Set();
-    const seenSources = new Set();
-
-    for (const item of ranked){
-      const queue = textMap.get(item.text);
-      if (!queue || !queue.length) continue;
-      const hit = queue.shift();
-      if (seenPassages.has(hit.__id)) continue;
-      seenPassages.add(hit.__id);
-
-      const docObj = DOC_INDEX.get(canonTitle(hit)) || {
-        id: canonTitle(hit),
-        title: prettyTitle(hit.title || hit.source || 'Source document'),
-        source: hit.source,
-        corpusLabel: hit.cat,
-        body: String(hit.text || ''),
-        items:[hit]
-      };
-
-      const sourceKey = docObj.id || hit.source;
-      if (results.length > 0 && seenSources.has(sourceKey)) continue; // dedupe also-relevant by source
-      seenSources.add(sourceKey);
-
-      const matchIdx = docObj.items ? docObj.items.findIndex(x => x.__id === hit.__id) : 0;
-
-      results.push({
-        doc: docObj,
-        hit,
-        chunk: String(hit.text || '').trim(),
-        score: item.score,
-        matchIdx
-      });
-      if (results.length >= 5) break;
-    }
-
-    render(displayQ, results, ms, docs.length);
-
-  } catch(e){
-    resultEl.innerHTML = `<div class="err">${esc(e.message)}</div>`;
+    const [supportResults, counterResults] = await Promise.all([
+      runCompare(fullQ, docs, 5, true),
+      runCompare(counterClaimText(fullQ), docs, 4, true)
+    ]);
+    const ms=Math.round(performance.now()-t0);
+    render(displayQ, supportResults, counterResults, ms, docs.length);
+  }catch(e){
+    resultEl.innerHTML=`<div class="err">${esc(e.message)}</div>`;
     resultEl.classList.add('on');
-  } finally {
+  }finally{
     loading.classList.remove('on');
   }
 }
 
-function cleanText(text){
-  return String(text || '').replace(/\s+/g, ' ').trim();
-}
-
+function cleanText(text){ return String(text||'').replace(/\s+/g,' ').trim(); }
 function truncateSmart(raw, maxLen){
-  const t = cleanText(raw);
-  if (t.length <= maxLen) return t;
-  let cut = t.slice(0, maxLen);
-  const last = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '), cut.lastIndexOf('; '));
-  if (last > maxLen * 0.55) cut = cut.slice(0, last + 1);
-  return cut.trim() + '…';
+  const t=cleanText(raw);
+  if(t.length<=maxLen) return t;
+  let cut=t.slice(0,maxLen);
+  const last=Math.max(cut.lastIndexOf('. '),cut.lastIndexOf('! '),cut.lastIndexOf('? '),cut.lastIndexOf('; '));
+  if(last>maxLen*0.55) cut=cut.slice(0,last+1);
+  return cut.trim()+'…';
 }
-
 function buildContextWindow(doc, matchIdx){
-  if (!doc?.items?.length) return {match:'', context:''};
-  const idx = Math.max(0, matchIdx);
-  const prev = doc.items[idx - 1]?.text || '';
-  const cur  = doc.items[idx]?.text || '';
-  const next = doc.items[idx + 1]?.text || '';
-  const match = truncateSmart(cur, 520);
-  const context = truncateSmart([prev, next].filter(Boolean).join(' '), 360);
-  return { match, context };
+  if(!doc?.items?.length) return {match:'', context:''};
+  const idx=Math.max(0,matchIdx);
+  const prev=doc.items[idx-1]?.text||'';
+  const cur=doc.items[idx]?.text||'';
+  const next=doc.items[idx+1]?.text||'';
+  return {
+    match: truncateSmart(cur, 560),
+    context: truncateSmart([prev,next].filter(Boolean).join(' '), 360)
+  };
 }
-
 function scoreStrength(score){
-  if (score >= 0.8) return 'Strong support in record';
-  if (score >= 0.6) return 'Meaningful support in record';
-  if (score >= 0.35) return 'Partial support in record';
-  return 'Weak support in current record';
+  if(score >= 0.8) return 'The record strongly supports this claim';
+  if(score >= 0.65) return 'The record meaningfully supports this claim';
+  if(score >= 0.45) return 'The record partially supports this claim';
+  return 'Support in the record is weak or indirect';
+}
+function verdictClass(score){
+  if(score >= 0.8) return 'strong';
+  if(score >= 0.65) return 'meaningful';
+  if(score >= 0.45) return 'partial';
+  return 'weak';
 }
 
-function render(displayQ, results, ms, total){
-  const r = document.getElementById('result');
+function renderList(rows, mode){
+  if(!rows.length) return '';
+  const head = mode==='counter' ? 'Counter-evidence in the record' : 'What else the record says';
+  return '<div class="r-also '+(mode==='counter'?'r-counter':'')+'"><div class="r-also-head">'+head+'</div>' +
+    rows.map((r,i)=>`
+      <div class="r-also-row" onclick="${mode==='counter'?'openCounterDoc':'openOtherDoc'}(${i})">
+        <div class="r-also-n">${String(i+1).padStart(2,'0')}</div>
+        <div class="r-also-body">
+          <div class="r-also-title">${esc(r.doc.title)}</div>
+          <div class="r-also-snip">${esc(truncateSmart(r.chunk, 120))}</div>
+          <div class="r-also-doc">${esc(r.hit.cat || r.doc.corpusLabel || 'Source')}</div>
+        </div>
+        <div class="r-also-sc">${r.score.toFixed(3)}</div>
+      </div>`).join('') + '</div>';
+}
 
-  if (!results.length){
-    r.innerHTML = '<div class="err">Nothing found. Try rephrasing.</div>';
+function render(displayQ, supportResults, counterResults, ms, total){
+  const r=document.getElementById('result');
+  if(!supportResults.length){
+    r.innerHTML='<div class="err">Nothing found. Try rephrasing the claim.</div>';
     r.classList.add('on');
     return;
   }
+  const top=supportResults[0];
+  const supportOthers=supportResults.slice(1);
+  const filteredCounter = (counterResults || []).filter(x => x.hit.__id !== top.hit.__id && x.doc.id !== top.doc.id);
+  const counterRows = filteredCounter.slice(0,3);
+  const windowed=buildContextWindow(top.doc, top.matchIdx);
 
-  const top = results[0];
-  const others = results.slice(1);
-  const windowed = buildContextWindow(top.doc, top.matchIdx);
-
-  CURRENT_DOC = { doc: top.doc, hit: top.hit, passage: windowed.match, results };
-
-  let alsoHtml = '';
-  if (others.length){
-    alsoHtml = '<div class="r-also"><div class="r-also-head">Also relevant</div>' +
-      others.map((r, i) => `
-        <div class="r-also-row" onclick="openOtherDoc(${i+1})">
-          <div class="r-also-n">${String(i+2).padStart(2,'0')}</div>
-          <div class="r-also-body">
-            <div class="r-also-title">${esc(r.doc.title)}</div>
-            <div class="r-also-snip">${esc(truncateSmart(r.chunk, 96))}</div>
-            <div class="r-also-doc">${esc(r.hit.cat || r.doc.corpusLabel || 'Source')}</div>
-          </div>
-          <div class="r-also-sc">${r.score.toFixed(3)}</div>
-        </div>`).join('') +
-      '</div>';
-  }
+  CURRENT_DOC={
+    doc: top.doc,
+    hit: top.hit,
+    passage: windowed.match,
+    supportResults,
+    counterResults: filteredCounter
+  };
 
   r.innerHTML =
-    '<button class="r-back" onclick="newSearch()">← New search</button>' +
-    '<div class="r-q"><span class="r-q-lbl">Question</span><span class="r-q-val">'+esc(displayQ)+'</span></div>' +
-    '<div class="r-card">' +
-      '<div class="r-tag">'+esc(top.hit.cat || top.doc.corpusLabel || 'Source')+'</div>' +
-      '<div class="r-title">'+esc(top.doc.title)+'</div>' +
-      '<div class="r-source-line"><div class="r-source-name">'+esc(top.doc.source || top.doc.rawTitle || '')+'</div><div class="r-strength">'+esc(scoreStrength(top.score))+'</div></div>' +
-      '<div class="r-match"><div class="r-match-lbl">Matched passage</div><div class="r-match-text">'+esc(windowed.match)+'</div></div>' +
+    '<button class="r-back" onclick="newSearch()">← New search</button>'+
+    '<div class="r-q"><span class="r-q-lbl">Claim</span><span class="r-q-val">'+esc(displayQ)+'</span></div>'+
+    '<div class="r-card">'+
+      '<div class="r-tag">'+esc(top.hit.cat || top.doc.corpusLabel || 'Source')+'</div>'+
+      '<div class="r-title">'+esc(top.doc.title)+'</div>'+
+      '<div class="r-source-line"><div class="r-source-name">'+esc(top.doc.source || top.doc.rawTitle || '')+'</div><div class="r-strength '+verdictClass(top.score)+'">'+esc(scoreStrength(top.score))+'</div></div>'+
+      '<div class="r-match"><div class="r-match-lbl">Best supporting passage</div><div class="r-match-text">'+esc(windowed.match)+'</div></div>'+
       (windowed.context ? '<div class="r-context"><div class="r-context-lbl">Context from source</div><div class="r-context-text">'+esc(windowed.context)+'</div></div>' : '') +
-      '<div class="r-meta">' +
-        '<div class="r-score">' +
-          '<div class="r-score-num" id="snum">0.000</div>' +
-          '<div class="r-score-lbl">Coherence</div>' +
-        '</div>' +
-        '<div class="r-meta-dots"><span>'+ms+'ms</span> · <span>'+total+' passages</span> · <span>ARBITER compare</span></div>' +
-      '</div>' +
-      '<div class="r-actions">' +
-        '<button type="button" class="r-open" onclick="openDoc()">Open source document</button>' +
-        '<button type="button" class="r-full" onclick="openDoc(true)">View full document →</button>' +
-      '</div>' +
-    '</div>' +
-    alsoHtml +
-    '<div class="r-rerun">' +
-      '<div class="r-rerun-lbl">Search from a stakeholder angle</div>' +
-      '<div class="r-rerun-desc">This reruns the same record through ARBITER after appending a stakeholder role to the question.</div>' +
-      '<div class="r-rerun-chips">' +
-        '<button type="button" class="pp" onclick="applyAngle(\'City attorney\')">City attorney</button>' +
-        '<button type="button" class="pp" onclick="applyAngle(\'LAFCO staff\')">LAFCO staff</button>' +
-        '<button type="button" class="pp" onclick="applyAngle(\'Skeptical voter\')">Skeptical voter</button>' +
-        '<button type="button" class="pp" onclick="applyAngle(\'Property owner\')">Property owner</button>' +
-        '<button type="button" class="pp" onclick="applyAngle(\'City manager\')">City manager</button>' +
-      '</div>' +
-      '<div class="r-rerun-row">' +
-        '<input class="r-rerun-input" id="rerunQ" value="'+esc(displayQ)+'" onkeydown="if(event.key===\'Enter\')rerun()">' +
-        '<button type="button" class="r-rerun-btn" onclick="rerun()">Search this angle</button>' +
-      '</div>' +
+      '<div class="r-meta">'+
+        '<div class="r-score">'+
+          '<div class="r-score-num" id="snum">0.000</div>'+
+          '<div class="r-score-lbl">Coherence</div>'+
+        '</div>'+
+        '<div class="r-meta-dots"><span>'+ms+'ms</span> · <span>'+total+' passages</span> · <span>ARBITER compare</span></div>'+
+      '</div>'+
+      '<div class="r-actions">'+
+        '<button type="button" class="r-open" onclick="openDoc()">Open source document</button>'+
+        '<button type="button" class="r-full" onclick="openDoc(true)">View full document →</button>'+
+      '</div>'+
+    '</div>'+
+    renderList(counterRows, 'counter') +
+    renderList(supportOthers, 'support') +
+    '<div class="r-rerun">'+
+      '<div class="r-rerun-lbl">Test from a stakeholder perspective</div>'+
+      '<div class="r-rerun-desc">Re-score the same claim through ARBITER after appending a stakeholder role to the claim.</div>'+
+      '<div class="r-rerun-chips">'+
+        '<button type="button" class="pp" onclick="applyAngle(\'City attorney\')">City attorney</button>'+
+        '<button type="button" class="pp" onclick="applyAngle(\'LAFCO staff\')">LAFCO staff</button>'+
+        '<button type="button" class="pp" onclick="applyAngle(\'Skeptical voter\')">Skeptical voter</button>'+
+        '<button type="button" class="pp" onclick="applyAngle(\'Property owner\')">Property owner</button>'+
+        '<button type="button" class="pp" onclick="applyAngle(\'City manager\')">City manager</button>'+
+      '</div>'+
+      '<div class="r-rerun-row">'+
+        '<input class="r-rerun-input" id="rerunQ" value="'+esc(displayQ)+'" onkeydown="if(event.key===\'Enter\')rerun()">'+
+        '<button type="button" class="r-rerun-btn" onclick="rerun()">Test this perspective</button>'+
+      '</div>'+
     '</div>';
 
   r.classList.add('on');
@@ -1716,157 +1720,128 @@ function render(displayQ, results, ms, total){
 }
 
 function animScore(target){
-  const el = document.getElementById('snum');
-  if (!el) return;
-  const dur = 600, t0 = performance.now();
+  const el=document.getElementById('snum'); if(!el) return;
+  const dur=600, t0=performance.now();
   (function tick(now){
-    const t = Math.min((now - t0) / dur, 1);
-    const e = 1 - Math.pow(1 - t, 3);
-    el.textContent = (e * target).toFixed(3);
-    if (t < 1) requestAnimationFrame(tick);
-    else el.textContent = target.toFixed(3);
+    const t=Math.min((now-t0)/dur,1), e=1-Math.pow(1-t,3);
+    el.textContent=(e*target).toFixed(3);
+    if(t<1) requestAnimationFrame(tick); else el.textContent=target.toFixed(3);
   })(performance.now());
 }
 
 function stripAnglePrefix(text){
-  return (text || '')
-    .trim()
-    .replace(/\s+As\s+(a|an)\s+[^,?.!]+$/i, '')
-    .replace(/^As\s+(a|an|the)\s+[^,]+,\s*/i, '')
+  return (text||'').trim()
+    .replace(/\s+As\s+(a|an)\s+[^,?.!]+$/i,'')
+    .replace(/^As\s+(a|an|the)\s+[^,]+,\s*/i,'')
     .trim();
 }
-
 function applyAngle(role){
-  const input = document.getElementById('rerunQ');
-  if (!input) return;
-  let base = stripAnglePrefix(input.value);
-  if (!base && lastQ) base = stripAnglePrefix(lastQ);
-  input.value = (base ? base + ' ' : '') + 'As a ' + role;
+  const input=document.getElementById('rerunQ'); if(!input) return;
+  let base=stripAnglePrefix(input.value);
+  if(!base && lastQ) base=stripAnglePrefix(lastQ);
+  input.value=(base ? base+' ' : '')+'As a '+role;
   input.focus();
-  input.setSelectionRange(input.value.length, input.value.length);
+  input.setSelectionRange(input.value.length,input.value.length);
 }
-
 function rerun(){
-  const input = document.getElementById('rerunQ');
-  if (!input) return;
-  const fullQ = input.value.trim();
-  if (!fullQ) return;
-  const y = window.scrollY;
-  if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
-  runQ(fullQ, fullQ, { preserveResult:true }).then(() => window.scrollTo(0, y));
+  const input=document.getElementById('rerunQ'); if(!input) return;
+  const fullQ=input.value.trim(); if(!fullQ) return;
+  const y=window.scrollY;
+  if(document.activeElement&&typeof document.activeElement.blur==='function') document.activeElement.blur();
+  runQ(fullQ, fullQ, {preserveResult:true}).then(()=>window.scrollTo(0,y));
 }
 
 function docHtml(body, passage, full){
-  const safeBody = esc(body || '');
-  const safePass = esc((passage || '').trim());
-  if (!safePass || full) return safeBody;
-  const idx = safeBody.indexOf(safePass);
-  if (idx < 0) return safeBody;
-  return safeBody.slice(0, idx) + '<span id="doc-pass" class="doc-pass">' + safePass + '</span>' + safeBody.slice(idx + safePass.length);
+  const safeBody=esc(body||''), safePass=esc((passage||'').trim());
+  if(!safePass || full) return safeBody;
+  const idx=safeBody.indexOf(safePass);
+  if(idx<0) return safeBody;
+  return safeBody.slice(0,idx)+'<span id="doc-pass" class="doc-pass">'+safePass+'</span>'+safeBody.slice(idx+safePass.length);
 }
 
 function openDoc(full=false){
-  if (!CURRENT_DOC || !CURRENT_DOC.doc) return;
-  document.getElementById('doc-kicker').textContent = CURRENT_DOC.hit?.cat || CURRENT_DOC.doc.corpusLabel || 'Source document';
-  document.getElementById('doc-title').textContent = CURRENT_DOC.doc.title || '';
-  document.getElementById('doc-jump').textContent = full ? 'Full document' : 'Jumped to the passage used for this answer';
-  document.getElementById('doc-paper').innerHTML = docHtml(CURRENT_DOC.doc.body || '', CURRENT_DOC.passage || '', full);
+  if(!CURRENT_DOC || !CURRENT_DOC.doc) return;
+  document.getElementById('doc-kicker').textContent=CURRENT_DOC.hit?.cat || CURRENT_DOC.doc.corpusLabel || 'Source document';
+  document.getElementById('doc-title').textContent=CURRENT_DOC.doc.title || '';
+  document.getElementById('doc-jump').textContent=full ? 'Full document' : 'Jumped to the supporting passage used for this claim';
+  document.getElementById('doc-paper').innerHTML=docHtml(CURRENT_DOC.doc.body || '', CURRENT_DOC.passage || '', full);
 
-  const relWrap = document.getElementById('doc-related');
-  const sameDocHits = (CURRENT_DOC.results || []).filter(x => x.doc.id === CURRENT_DOC.doc.id && x.hit.__id !== CURRENT_DOC.hit.__id).slice(0,4);
-  if (relWrap){
-    if (sameDocHits.length){
-      relWrap.innerHTML = '<div class="doc-related-head">Other matching passages in this source</div>' +
-        sameDocHits.map((x, i) =>
-          '<div class="doc-related-row" onclick="jumpDocPassage('+JSON.stringify(x.hit.__id)+')">' +
-            '<div class="doc-related-score">'+x.score.toFixed(3)+'</div>' +
-            '<div class="doc-related-text">'+esc(truncateSmart(x.chunk, 180))+'</div>' +
+  const relWrap=document.getElementById('doc-related');
+  const sameDocHits=(CURRENT_DOC.supportResults||[]).filter(x=>x.doc.id===CURRENT_DOC.doc.id && x.hit.__id!==CURRENT_DOC.hit.__id).slice(0,4);
+  if(relWrap){
+    if(sameDocHits.length){
+      relWrap.innerHTML='<div class="doc-related-head">Other matching passages in this source</div>'+
+        sameDocHits.map(x =>
+          '<div class="doc-related-row" onclick="jumpDocPassage('+JSON.stringify(x.hit.__id)+')">'+
+            '<div class="doc-related-score">'+x.score.toFixed(3)+'</div>'+
+            '<div class="doc-related-text">'+esc(truncateSmart(x.chunk,180))+'</div>'+
           '</div>'
         ).join('');
-      relWrap.style.display = 'block';
+      relWrap.style.display='block';
     } else {
-      relWrap.innerHTML = '';
-      relWrap.style.display = 'none';
+      relWrap.innerHTML=''; relWrap.style.display='none';
     }
   }
 
-  const modal = document.getElementById('doc-modal');
-  modal.classList.add('on');
-  modal.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-  const body = document.getElementById('doc-body');
-  body.scrollTop = 0;
-  if (!full){
-    requestAnimationFrame(() => {
-      const el = document.getElementById('doc-pass');
-      if (el) el.scrollIntoView({ block:'center' });
+  const modal=document.getElementById('doc-modal');
+  modal.classList.add('on'); modal.setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+  const body=document.getElementById('doc-body'); body.scrollTop=0;
+  if(!full){
+    requestAnimationFrame(()=>{
+      const el=document.getElementById('doc-pass');
+      if(el) el.scrollIntoView({block:'center'});
     });
   }
 }
-
 function jumpDocPassage(hitId){
-  if (!CURRENT_DOC?.doc?.items?.length) return;
-  const idx = CURRENT_DOC.doc.items.findIndex(x => x.__id === hitId);
-  if (idx < 0) return;
-  const target = CURRENT_DOC.doc.items[idx];
-  CURRENT_DOC = { ...CURRENT_DOC, hit: target, passage: cleanText(target.text) };
-  document.getElementById('doc-paper').innerHTML = docHtml(CURRENT_DOC.doc.body || '', CURRENT_DOC.passage || '', false);
-  requestAnimationFrame(() => {
-    const el = document.getElementById('doc-pass');
-    if (el) el.scrollIntoView({ block:'center' });
+  if(!CURRENT_DOC?.doc?.items?.length) return;
+  const idx=CURRENT_DOC.doc.items.findIndex(x=>x.__id===hitId);
+  if(idx<0) return;
+  const target=CURRENT_DOC.doc.items[idx];
+  CURRENT_DOC={...CURRENT_DOC, hit:target, passage:cleanText(target.text)};
+  document.getElementById('doc-paper').innerHTML=docHtml(CURRENT_DOC.doc.body || '', CURRENT_DOC.passage || '', false);
+  requestAnimationFrame(()=>{
+    const el=document.getElementById('doc-pass');
+    if(el) el.scrollIntoView({block:'center'});
   });
 }
-
 function openOtherDoc(idx){
-  if (!CURRENT_DOC || !CURRENT_DOC.results || !CURRENT_DOC.results[idx]) return;
-  const hit = CURRENT_DOC.results[idx];
-  CURRENT_DOC = {
-    doc: hit.doc,
-    hit: hit.hit,
-    passage: cleanText(hit.chunk),
-    results: CURRENT_DOC.results
-  };
+  const hit=CURRENT_DOC?.supportResults?.slice(1)?.[idx];
+  if(!hit) return;
+  CURRENT_DOC={...CURRENT_DOC, doc:hit.doc, hit:hit.hit, passage:cleanText(hit.chunk)};
   openDoc(false);
 }
-
-function closeDoc(){
-  const modal = document.getElementById('doc-modal');
-  if (!modal) return;
-  modal.classList.remove('on');
-  modal.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
+function openCounterDoc(idx){
+  const hit=CURRENT_DOC?.counterResults?.[idx];
+  if(!hit) return;
+  CURRENT_DOC={...CURRENT_DOC, doc:hit.doc, hit:hit.hit, passage:cleanText(hit.chunk)};
+  openDoc(false);
 }
-
-window.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeDoc();
-});
-
-document.addEventListener('click', e => {
-  const modal = document.getElementById('doc-modal');
-  if (modal && e.target === modal) closeDoc();
-});
+function closeDoc(){
+  const modal=document.getElementById('doc-modal'); if(!modal) return;
+  modal.classList.remove('on'); modal.setAttribute('aria-hidden','true');
+  document.body.style.overflow='';
+}
+window.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDoc(); });
+document.addEventListener('click',e=>{ const modal=document.getElementById('doc-modal'); if(modal && e.target===modal) closeDoc(); });
 
 function scrollToSearch(){
-  const target = document.getElementById('search-section') || document.getElementById('q');
-  if (target) target.scrollIntoView({ behavior:'smooth', block:'center' });
-  setTimeout(() => document.getElementById('q')?.focus(), 350);
+  const target=document.getElementById('search-section')||document.getElementById('q');
+  if(target) target.scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(()=>document.getElementById('q')?.focus(),350);
 }
-
 function newSearch(){
-  document.getElementById('q').value = '';
+  document.getElementById('q').value='';
   document.getElementById('result').classList.remove('on');
-  document.getElementById('sugs').style.display = 'block';
+  document.getElementById('sugs').style.display='block';
   setFilter('all');
-  window.scrollTo({ top:0, behavior:'smooth' });
+  window.scrollTo({top:0,behavior:'smooth'});
 }
-
-document.getElementById('logo').addEventListener('click', (e) => {
-  e.preventDefault();
-  newSearch();
-});
-
+document.getElementById('logo').addEventListener('click',(e)=>{ e.preventDefault(); newSearch(); });
 loadCorpus();
 </script>
+
 
 <div id="doc-modal" class="doc-modal" aria-hidden="true">
   <div class="doc-wrap">
