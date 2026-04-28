@@ -31,37 +31,24 @@ body{min-height:100vh;}
 
 .shell{width:100%;margin:0 auto;position:relative;}
 .col{max-width:760px;margin:0 auto;padding:0 28px;position:relative;}
-.col-wide{max-width:1180px;margin:0 auto;padding:0 28px;position:relative;}
 
 .nav{
   position:fixed;top:18px;left:24px;right:24px;z-index:50;
   background:rgba(255,255,255,.74);backdrop-filter:saturate(180%) blur(20px);
-  -webkit-backdrop-filter:saturate(180%) blur(20px);
   border:1px solid rgba(232,232,227,.85);border-radius:100px;
-  padding:10px 14px 10px 18px;box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 8px 32px rgba(10,10,10,.07);
-  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:10px 14px 10px 18px;display:flex;align-items:center;justify-content:space-between;gap:18px;
   max-width:1180px;margin:0 auto;
 }
 .nav-mark{font:500 18px/1 var(--serif);letter-spacing:-.025em;color:var(--ink);cursor:pointer;}
 .nav-mark em{font-style:italic;font-weight:400;color:var(--ink3);}
-.nav-links{display:flex;align-items:center;gap:4px;}
 .nav-link{font:400 13px/1 var(--sans);color:var(--ink2);padding:9px 16px;border-radius:100px;cursor:pointer;background:transparent;border:none;}
 .nav-link:hover{background:rgba(10,10,10,.06);color:var(--ink);}
-@media(max-width:680px){
-  .nav{padding:9px 14px 9px 18px;top:12px;left:14px;right:14px;}
-  .nav-mark{font-size:16px;}
-  .nav-link{padding:8px 12px;font-size:12px;}
-}
 
-.hero{padding:140px 0 80px;position:relative;overflow:hidden;}
-.hero-inner{max-width:1180px;margin:0 auto;padding:0 28px;position:relative;}
+.hero{padding:140px 0 80px;position:relative;}
+.hero-inner{max-width:1180px;margin:0 auto;padding:0 28px;}
 .hero-h{font:500 clamp(54px,11vw,150px)/.94 var(--serif);letter-spacing:-.045em;color:var(--ink);margin-bottom:36px;max-width:780px;}
 .hero-h em{font-style:italic;font-weight:400;display:block;color:var(--ink2);font-size:.78em;margin-top:.08em;}
 .hero-dek{font:300 18px/1.5 var(--sans);color:var(--ink3);max-width:520px;margin-bottom:56px;}
-
-.boundary{position:absolute;top:80px;right:-160px;width:680px;height:680px;pointer-events:none;opacity:0;animation:bound-fade 1.4s cubic-bezier(.2,0,0,1) .6s forwards;}
-@keyframes bound-fade{to{opacity:1;}}
-.boundary path,.boundary line,.boundary circle{fill:none;stroke:var(--cove);stroke-width:1;}
 
 .search{position:relative;margin-bottom:24px;border-bottom:2px solid var(--ink);display:flex;align-items:center;padding-bottom:14px;}
 .search:focus-within{border-color:var(--cove);}
@@ -74,7 +61,6 @@ body{min-height:100vh;}
 .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:28px;margin-bottom:8px;}
 .filters-lbl{font:400 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);margin-right:6px;}
 .filt{font:400 13px/1 var(--sans);color:var(--ink2);background:transparent;border:1px solid var(--line);border-radius:100px;padding:9px 16px;cursor:pointer;}
-.filt:hover{border-color:var(--ink3);color:var(--ink);}
 .filt.on{background:var(--ink);border-color:var(--ink);color:var(--paper);}
 .filt span{font:400 11px/1 var(--mono);opacity:.5;}
 
@@ -84,7 +70,6 @@ body{min-height:100vh;}
 .sug-row{display:flex;align-items:center;gap:14px;padding:14px 4px;border-bottom:1px solid var(--line);cursor:pointer;font:400 15px/1.4 var(--sans);color:var(--ink2);}
 .sug-row:hover{padding-left:14px;color:var(--ink);}
 .sug-row-arrow{margin-left:auto;color:var(--ink5);}
-.sug-row:hover .sug-row-arrow{color:var(--ink);transform:translateX(2px);}
 
 .loading{display:none;align-items:center;gap:12px;padding:24px 0;font:400 13px/1 var(--mono);color:var(--ink3);}
 .loading.on{display:flex;}
@@ -102,8 +87,8 @@ body{min-height:100vh;}
 .r-q-lbl{text-transform:uppercase;letter-spacing:.08em;font-size:10px;}
 .r-q-val{color:var(--ink2);font-style:italic;font-family:var(--serif);font-size:15px;}
 
-.r-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:32px;margin-bottom:14px;}
-.r-tag{font:400 10px/1 var(--mono);color:var(--ink4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;}
+.r-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:28px;margin-bottom:14px;}
+.r-tag{font:400 10px/1 var(--mono);color:var(--ink4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;}
 .r-arg{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;}
 .r-arg-copy{flex:1;}
 .r-arg-k{font:400 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink4);margin-bottom:6px;}
@@ -123,20 +108,18 @@ body{min-height:100vh;}
 .r-open{background:var(--ink);color:var(--paper);}
 .r-open:hover{background:var(--cove);}
 .r-full{background:transparent;color:var(--ink3);border:1px solid var(--line);}
-.r-full:hover{border-color:var(--ink3);color:var(--ink);}
 
 .r-also{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:14px;}
 .r-also-head{padding:16px 24px;border-bottom:1px solid var(--line);font:400 10px/1 var(--mono);color:var(--ink4);text-transform:uppercase;letter-spacing:.1em;}
-.r-also-row{display:flex;align-items:center;padding:16px 24px;border-bottom:1px solid var(--line2);gap:18px;cursor:pointer;}
+.r-also-row{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line2);gap:16px;cursor:pointer;}
 .r-also-row:last-child{border-bottom:none;}
 .r-also-row:hover{background:var(--bg);}
-.r-also-n{font:300 12px/1 var(--mono);color:var(--ink4);width:24px;font-variant-numeric:tabular-nums;}
-.r-also-body{flex:1;}
+.r-also-n{font:300 12px/1 var(--mono);color:var(--ink4);width:28px;font-variant-numeric:tabular-nums;}
+.r-also-body{flex:1;min-width:0;}
 .r-also-title{font:500 14px/1.3 var(--sans);color:var(--ink);margin-bottom:4px;}
-.r-also-snip{font:300 12px/1.4 var(--sans);color:var(--ink4);}
-.r-also-sc{font:400 12px/1 var(--mono);color:var(--ink3);font-variant-numeric:tabular-nums;flex-shrink:0;}
-.r-also-badge{font:400 9px/1 var(--mono);color:var(--cove);background:rgba(30,58,95,.08);padding:4px 8px;border-radius:100px;margin-left:12px;white-space:nowrap;}
-
+.r-also-snip{font:300 12px/1.4 var(--sans);color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.r-also-sc{font:400 11px/1 var(--mono);color:var(--ink3);font-variant-numeric:tabular-nums;flex-shrink:0;margin-left:12px;}
+.r-also-badge{font:400 9px/1 var(--mono);color:var(--cove);background:rgba(30,58,95,.08);padding:4px 8px;border-radius:100px;white-space:nowrap;margin-left:8px;}
 .sig-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
 .sig-badge{font:400 9px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);padding:5px 8px;border:1px solid var(--line);border-radius:999px;}
 
@@ -152,35 +135,30 @@ body{min-height:100vh;}
 .stress-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
 .stress-btn{appearance:none;border:1px solid var(--line);background:transparent;color:var(--ink2);border-radius:999px;padding:8px 14px;cursor:pointer;font:400 12px/1 var(--sans);}
 .stress-btn:hover{background:rgba(10,10,10,.03);}
-.r-summary-status{margin-top:14px;}
-.cache-note{font:400 9px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);}
+.cache-note{font:400 9px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);margin-top:12px;display:inline-block;}
 .loading-pill{display:inline-flex;align-items:center;gap:8px;font:400 10px/1 var(--mono);color:var(--ink4);padding:8px 12px;border:1px solid var(--line);border-radius:999px;}
 .loading-dot{width:6px;height:6px;border-radius:999px;background:var(--ink4);animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:.2}50%{opacity:.9}}
 
-.stat-panel{width:100%;background:var(--cove);color:var(--paper);padding:120px 0;}
+.stat-panel{width:100%;background:var(--cove);color:var(--paper);padding:80px 0;}
 .stat-panel-inner{max-width:1180px;margin:0 auto;padding:0 48px;display:grid;grid-template-columns:1.4fr 1fr;gap:64px;align-items:end;}
-.stat-panel-num{font:500 clamp(96px,16vw,220px)/.85 var(--serif);letter-spacing:-.05em;}
+.stat-panel-num{font:500 clamp(80px,12vw,180px)/.85 var(--serif);letter-spacing:-.05em;}
 .stat-panel-eye{font:400 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.55);}
-.stat-panel-cap{font:300 19px/1.5 var(--sans);color:rgba(255,255,255,.92);}
-.img-full-frame{width:100%;height:78vh;min-height:520px;background-size:cover;background-position:center;}
-.img-text{max-width:760px;margin:0 auto;padding:80px 28px 96px;}
-.img-eye{font:400 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink4);margin-bottom:22px;}
-.img-h{font:500 clamp(36px,5vw,56px)/1.05 var(--serif);letter-spacing:-.025em;margin-bottom:28px;}
-.img-body{font:300 18px/1.65 var(--sans);color:var(--ink2);}
-.about-section{padding:96px 0 120px;}
-.about-lbl{font:400 11px/1 var(--mono);color:var(--ink4);text-transform:uppercase;margin-bottom:20px;}
+.stat-panel-cap{font:300 18px/1.5 var(--sans);color:rgba(255,255,255,.92);margin-top:12px;}
+.img-full-frame{width:100%;height:60vh;min-height:400px;background-size:cover;background-position:center;}
+.about-section{padding:80px 0;}
+.about-lbl{font:400 11px/1 var(--mono);color:var(--ink4);text-transform:uppercase;margin-bottom:16px;}
 .about p{font:300 14px/1.7 var(--sans);color:var(--ink3);margin-bottom:14px;max-width:600px;}
 .submit-inline{margin-top:18px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font:400 12px/1.5 var(--mono);color:var(--ink4);}
 .submit-addr{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--ink3);}
 .err{padding:24px;font:400 13px/1.5 var(--mono);color:#dc2626;background:var(--paper);border:1px solid #fee2e2;border-radius:12px;}
 .doc-modal{position:fixed;inset:0;z-index:120;display:none;background:rgba(10,10,10,.45);backdrop-filter:blur(8px);}
 .doc-modal.on{display:block;}
-.doc-wrap{position:absolute;inset:28px;max-width:1100px;margin:auto;background:var(--paper);border:1px solid var(--line);border-radius:20px;overflow:auto;}
-.doc-top{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;}
-.doc-title{font:500 28px/1.1 var(--serif);}
-.doc-close{background:transparent;border:none;font-size:34px;cursor:pointer;}
-.doc-paper{max-width:820px;margin:0 auto;padding:28px 24px;white-space:pre-wrap;font:400 16px/1.8 var(--serif);color:var(--ink2);}
+.doc-wrap{position:absolute;inset:28px;max-width:900px;margin:auto;background:var(--paper);border:1px solid var(--line);border-radius:20px;overflow:auto;max-height:90vh;}
+.doc-top{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.doc-title{font:500 24px/1.2 var(--serif);}
+.doc-close{background:transparent;border:none;font-size:32px;cursor:pointer;line-height:1;padding:0 8px;}
+.doc-paper{max-width:760px;margin:0 auto;padding:28px 24px;white-space:pre-wrap;font:400 15px/1.7 var(--serif);color:var(--ink2);}
 .doc-pass{background:rgba(30,58,95,.12);border-radius:2px;}
 </style>
 </head>
@@ -202,20 +180,20 @@ body{min-height:100vh;}
         <input class="search-input" id="q" placeholder="Enter a claim about cityhood." autocomplete="off" onkeydown="if(event.key==='Enter')go()">
         <button class="search-go" onclick="go()" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
       </div>
-      <div class="submit-inline"><span class="submit-lead">To contribute to the public record:</span><a class="submit-addr" href="mailto:record@lajolla.city">record@lajolla.city</a></div>
+      <div class="submit-inline"><span class="submit-lead">Contribute:</span><a class="submit-addr" href="mailto:record@lajolla.city">record@lajolla.city</a></div>
       <div class="filters" id="filters"></div>
     </div>
   </section>
 
-  <section class="work"><div class="work-inner">
+  <section class="work"><div class="col">
     <div class="loading" id="loading"><span>Searching</span><div class="loading-bar"></div><span id="loading-count"></span></div>
     <div class="sugs" id="sugs"><div class="sugs-lbl">Try one of these</div><div class="sug-list" id="sug-list"></div></div>
     <div class="result" id="result"></div>
   </div></section>
 
-  <!-- Static content sections (kept for design) -->
-  <section class="stat-panel"><div class="stat-panel-inner"><div class="stat-panel-num">46,000</div><div class="stat-panel-side"><div class="stat-panel-eye">Residents · within proposed boundary</div><div class="stat-panel-cap">Larger than Del Mar, Coronado, Solana Beach, and Rancho Santa Fe combined. <em>A city, in everything but name.</em></div></div></div></section>
-  <section class="about-section"><div class="col"><div class="about"><div class="about-lbl">About this tool</div><p><strong>lajolla.city</strong> is an independent research desk for the La Jolla cityhood movement. Ask any question about incorporation in plain English. The exact passage that answers it is returned, with source and coherence score.</p><p>The corpus covers the Preliminary Comprehensive Fiscal Analysis, California Government Code on incorporation and LAFCO procedure, Coastal Commission jurisdiction, comparisons to Malibu, Coronado, Del Mar, and Rancho Palos Verdes, the complete legal record of the San Diego vs LAFCO lawsuit, and the current status of the Association for the City of La Jolla as of April 2026.</p><div class="about-foot">Independent archival interface. Built in La Jolla by Actual General Intelligence Inc.</div></div></div></section>
+  <section class="stat-panel"><div class="stat-panel-inner"><div class="stat-panel-num">46,000</div><div class="stat-panel-side"><div class="stat-panel-eye">Residents · proposed boundary</div><div class="stat-panel-cap">Larger than Del Mar, Coronado, Solana Beach, and Rancho Santa Fe combined.</div></div></div></section>
+  
+  <section class="about-section"><div class="col"><div class="about"><div class="about-lbl">About this tool</div><p><strong>lajolla.city</strong> is an independent research desk for the La Jolla cityhood movement. Ask any question about incorporation in plain English. The exact passage that answers it is returned, with source and coherence score.</p><p>The corpus covers the Preliminary Comprehensive Fiscal Analysis, California Government Code on incorporation and LAFCO procedure, Coastal Commission jurisdiction, comparisons to Malibu, Coronado, Del Mar, and Rancho Palos Verdes, the complete legal record of the San Diego vs LAFCO lawsuit, and the current status of the Association for the City of La Jolla as of April 2026.</p><div class="about-foot">Independent archival interface. Built in La Jolla.</div></div></div></section>
 </div>
 
 <div id="doc-modal" class="doc-modal"><div class="doc-wrap"><div class="doc-top"><div class="doc-title" id="doc-title"></div><button class="doc-close" onclick="closeDoc()">×</button></div><div class="doc-paper" id="doc-paper"></div></div></div>
@@ -223,16 +201,8 @@ body{min-height:100vh;}
 <script>
 const API = 'https://api.arbiter.traut.ai/public/compare';
 const CORPUS_URL = './corpus.json';
-const CACHE_VERSION = 'v6';
-const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-const DEFAULT_CLAIMS = [
-  'San Diego’s strongest attack is procedural rather than fiscal',
-  'Revenue neutrality makes incorporation unworkable',
-  'The petition validation process was flawed',
-  'La Jolla should become its own city because the record supports fiscal viability'
-];
-const STOP_WORDS = new Set(['that','this','these','those','their','there','would','could','should','about','from','with','without','into','during','because','then','than','then','very','just','but','for','not','are','was','were','been','being','have','has','had','having','do','does','did','doing','the','a','an','and','of','to','in','for','on','at','by','is','as']);
+const CACHE_VERSION = 'v7';
+const STOP_WORDS = new Set(['that','this','these','those','their','there','would','could','should','about','from','with','without','into','during','because','then','than','very','just','but','for','not','are','was','were','been','being','have','has','had','having','do','does','did','doing','the','a','an','and','of','to','in','for','on','at','by','is','as']);
 
 let activeFilter = 'all';
 let CORPUS = [];
@@ -241,22 +211,30 @@ let FILTERS = [];
 let lastRanked = [];
 let currentDoc = null;
 
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const cleanText = t => String(t || '').replace(/\s+/g, ' ').trim();
+const truncate = (raw, maxLen) => {
+  let t = cleanText(raw);
+  if (t.length <= maxLen) return t;
+  let cut = t.slice(0, maxLen);
+  let last = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+  if (last > maxLen * 0.55) cut = cut.slice(0, last + 1);
+  return cut.trim() + '…';
+};
+
+const DEFAULT_CLAIMS = [
+  'San Diego’s strongest attack is procedural rather than fiscal',
+  'Revenue neutrality makes incorporation unworkable',
+  'The petition validation process was flawed',
+  'La Jolla should become its own city because the record supports fiscal viability'
+];
+
 function prettyTitle(raw){
   const s = String(raw || '').trim();
   if (!s) return 'Source document';
-  const base = s.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim();
-  return base;
+  return s.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim();
 }
 function canonTitle(entry){ return entry?.source || entry?.title || 'Source document'; }
-function cleanText(text){ return String(text || '').replace(/\s+/g, ' ').trim(); }
-function truncateSmart(raw, maxLen){
-  const t = cleanText(raw);
-  if (t.length <= maxLen) return t;
-  let cut = t.slice(0, maxLen);
-  const last = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
-  if (last > maxLen * 0.55) cut = cut.slice(0, last + 1);
-  return cut.trim() + '…';
-}
 function scoreStrength(score){
   if (score >= 0.8) return 'Strong support';
   if (score >= 0.65) return 'Meaningful support';
@@ -265,17 +243,14 @@ function scoreStrength(score){
 }
 function inferMeta(item){
   const blob = (cleanText(item.title) + ' ' + cleanText(item.text)).toLowerCase();
-  let author = 'Record', docType = 'ADMINISTRATIVE', stage = 'general';
+  let author = 'Record', docType = 'ADMINISTRATIVE';
   if (blob.includes('mayor gloria') || blob.includes('city of san diego')) author = 'City of San Diego';
   else if (blob.includes('lafco')) author = 'LAFCO';
-  else if (blob.includes('aclj') || blob.includes('association for the city')) author = 'ACLJ';
+  else if (blob.includes('aclj')) author = 'ACLJ';
   if (blob.includes('letter') || blob.includes('statement')) docType = 'POLITICAL';
   if (blob.includes('rfp') || blob.includes('certificate') || blob.includes('agenda')) docType = 'ADMINISTRATIVE';
   if (blob.includes('lawsuit') || blob.includes('court')) docType = 'LEGAL';
-  if (blob.includes('petition')) stage = 'petition validation';
-  if (blob.includes('fiscal') || blob.includes('cfa')) stage = 'fiscal';
-  if (blob.includes('lawsuit')) stage = 'litigation';
-  return { author, docType, stage };
+  return { author, docType };
 }
 
 function buildDocIndex(){
@@ -293,28 +268,19 @@ function buildDocIndex(){
     }];
   }));
 }
-function buildFiltersFromCorpus(){
-  const counts = new Map();
-  for (const item of CORPUS){
-    const cat = item.cat || 'Uncategorized';
-    counts.set(cat, (counts.get(cat) || 0) + 1);
-  }
-  FILTERS = [...counts.entries()].map(([id, count]) => ({ id, label:id, count })).sort((a,b) => a.label.localeCompare(b.label));
-}
 function buildFilters(){
+  const counts = new Map();
+  for (const item of CORPUS) counts.set(item.cat || 'Uncategorized', (counts.get(item.cat) || 0) + 1);
+  FILTERS = [...counts.entries()].map(([id, count]) => ({ id, label:id, count })).sort((a,b) => a.label.localeCompare(b.label));
   const wrap = document.getElementById('filters');
-  const total = CORPUS.length;
   let out = '<span class="filters-lbl">Sources</span>';
-  out += `<button class="filt ${activeFilter==='all'?'on':''}" onclick="setFilter('all')">All <span>${total}</span></button>`;
-  FILTERS.forEach(f => {
-    out += `<button class="filt ${activeFilter===f.id?'on':''}" onclick="setFilter('${f.id}')">${esc(f.label)} <span>${f.count}</span></button>`;
-  });
+  out += `<button class="filt ${activeFilter==='all'?'on':''}" onclick="setFilter('all')">All <span>${CORPUS.length}</span></button>`;
+  FILTERS.forEach(f => out += `<button class="filt ${activeFilter===f.id?'on':''}" onclick="setFilter('${f.id}')">${esc(f.label)} <span>${f.count}</span></button>`);
   wrap.innerHTML = out;
 }
 function setFilter(id){ activeFilter = id; buildFilters(); buildSugs(); }
 function buildSugs(){
-  const list = document.getElementById('sug-list');
-  list.innerHTML = DEFAULT_CLAIMS.map(q =>
+  document.getElementById('sug-list').innerHTML = DEFAULT_CLAIMS.map(q =>
     `<div class="sug-row" onclick="setQ(${JSON.stringify(q)})">${esc(q)}<span class="sug-row-arrow">→</span></div>`
   ).join('');
 }
@@ -328,7 +294,6 @@ async function loadCorpus(){
     CORPUS = await r.json();
     CORPUS = CORPUS.map((item, idx) => ({ ...item, __id: idx, cat: item.cat || 'Uncategorized', source: item.source || item.title, meta: inferMeta(item) }));
     buildDocIndex();
-    buildFiltersFromCorpus();
     buildFilters();
     buildSugs();
     document.querySelector('.sugs-lbl').textContent = `Try one of these · ${CORPUS.length} passages`;
@@ -341,24 +306,16 @@ function cacheKey(claim, filter){ return `${CACHE_VERSION}::${filter}::${cleanTe
 function saveCache(key, payload){ try{ localStorage.setItem(key, JSON.stringify({ts:Date.now(), payload})); } catch(e){} }
 function loadCache(key){ try{ const raw = localStorage.getItem(key); if(raw) return JSON.parse(raw).payload; } catch(e){} return null; }
 
-// KEYWORD PREFILTER — reduces candidates from 355 to ~48 before API call
 async function compareClaim(query, docs){
   const queryLower = query.toLowerCase();
   const keywords = queryLower.split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w));
-  
-  // score each doc by keyword frequency and exact phrase boost
   const scored = docs.map(doc => {
     const text = (doc.text + ' ' + (doc.title || '')).toLowerCase();
     let score = 0;
-    for (const kw of keywords) {
-      const regex = new RegExp(kw, 'gi');
-      const matches = (text.match(regex) || []).length;
-      score += matches * 2;
-    }
+    for (const kw of keywords) { const matches = (text.match(new RegExp(kw, 'gi')) || []).length; score += matches * 2; }
     if (text.includes(queryLower)) score += 50;
     return { doc, score };
   });
-  
   const topCandidates = scored.sort((a,b) => b.score - a.score).slice(0, 48);
   const candidates = topCandidates.map(x => cleanText(x.doc.text));
   if (!candidates.length) return [];
@@ -395,7 +352,6 @@ function renderResult(claim, results, ms, totalPassages, cached=false){
   const top = results[0];
   const others = results.slice(1);
   const spread = others.length ? (top.score - others[0].score) : 0;
-  const hasCounter = others.length && others[0].score > 0.65;
   
   const html = `
     <button class="r-back" onclick="newSearch()">← New search</button>
@@ -403,13 +359,13 @@ function renderResult(claim, results, ms, totalPassages, cached=false){
     <div class="r-summary">
       <div class="r-summary-head">⚖️ Record analysis</div>
       <div class="r-summary-grid">
-        <div class="r-summary-text">${scoreStrength(top.score)}. ${hasCounter ? 'Counter-evidence also present in the record.' : 'No strong counter-evidence in the current record.'}</div>
+        <div class="r-summary-text"><strong>${scoreStrength(top.score)}</strong>${others.length && others[0].score > 0.65 ? ' · Counter-evidence also present in the record.' : ''}</div>
         <div class="r-summary-points">
-          <div class="r-axis"><div class="r-axis-k">Top passage coherence</div><div class="r-axis-v">${top.score.toFixed(3)}</div></div>
-          <div class="r-axis"><div class="r-axis-k">Support / counter spread</div><div class="r-axis-v">${spread.toFixed(3)}</div></div>
+          <div class="r-axis"><div class="r-axis-k">Top coherence</div><div class="r-axis-v">${top.score.toFixed(3)}</div></div>
+          <div class="r-axis"><div class="r-axis-k">Spread</div><div class="r-axis-v">${spread.toFixed(3)}</div></div>
         </div>
       </div>
-      <div class="r-summary-status"><span class="cache-note">${cached ? 'Cached result' : `Queried ${totalPassages} passages → compared ${results.length} top matches in ${ms}ms`}</span></div>
+      <div class="cache-note">${cached ? 'Cached result' : `Queried ${totalPassages} passages → ${results.length} matches in ${ms}ms`}</div>
       <div class="stress-row">
         <button class="stress-btn" onclick="invertAndSearch()">↺ Invert claim</button>
         <button class="stress-btn" onclick="searchStrongestCounter()">⚡ Test strongest counter</button>
@@ -420,7 +376,7 @@ function renderResult(claim, results, ms, totalPassages, cached=false){
       <div class="r-arg">
         <div class="r-arg-copy">
           <div class="r-arg-k">Argument from record</div>
-          <div class="r-arg-title">${esc(truncateSmart(top.chunk, 100))}</div>
+          <div class="r-arg-title">${esc(truncate(top.chunk, 100))}</div>
           <div class="r-source-title">${esc(top.doc.title)}</div>
           <div class="sig-badges"><span class="sig-badge">${esc(top.doc.meta?.docType || 'RECORD')}</span><span class="sig-badge">${esc(top.doc.meta?.author || 'Record')}</span></div>
         </div>
@@ -428,20 +384,20 @@ function renderResult(claim, results, ms, totalPassages, cached=false){
       </div>
       <div class="r-match"><div class="r-match-lbl">📖 Full passage</div><div class="r-match-text">${esc(top.chunk)}</div></div>
       <div class="r-meta">
-        <div class="r-score"><div class="r-score-num" id="snum">${top.score.toFixed(3)}</div><div class="r-score-lbl">Coherence</div></div>
+        <div class="r-score"><div class="r-score-num">${top.score.toFixed(3)}</div><div class="r-score-lbl">Coherence</div></div>
         <div class="r-meta-dots"><span>${ms}ms</span> · <span>${totalPassages} passages</span></div>
       </div>
       <div class="r-actions">
-        <button class="r-open" onclick="showFullDoc(${JSON.stringify(escape(top.doc))}, ${JSON.stringify(escape(top.chunk))})">Open source</button>
+        <button class="r-open" onclick="showFullDoc(${JSON.stringify({title:top.doc.title, body:top.doc.body})})">Open source</button>
       </div>
     </div>
     ${others.length ? `<div class="r-also"><div class="r-also-head">📋 Other relevant passages (${others.length})</div>${
       others.map((r,i)=>`
-        <div class="r-also-row" onclick="showFullDoc(${JSON.stringify(escape(r.doc))}, ${JSON.stringify(escape(r.chunk))})">
+        <div class="r-also-row" onclick="showFullDoc(${JSON.stringify({title:r.doc.title, body:r.doc.body})})">
           <div class="r-also-n">${String(i+1).padStart(2,'0')}</div>
           <div class="r-also-body">
             <div class="r-also-title">${esc(r.doc.title)}</div>
-            <div class="r-also-snip">${esc(truncateSmart(r.chunk, 100))}</div>
+            <div class="r-also-snip">${esc(truncate(r.chunk, 120))}</div>
           </div>
           <div class="r-also-sc">${r.score.toFixed(3)}</div>
           <div class="r-also-badge">${scoreStrength(r.score)}</div>
@@ -453,7 +409,7 @@ function renderResult(claim, results, ms, totalPassages, cached=false){
   document.getElementById('result').classList.add('on');
   lastRanked = results;
 }
-function escape(obj){ return obj; } // placeholder, JSON.stringify handles
+
 async function runClaim(claim){
   const loading = document.getElementById('loading');
   const resultEl = document.getElementById('result');
@@ -489,14 +445,13 @@ async function runClaim(claim){
 function go(){ const q = document.getElementById('q').value.trim(); if(q && CORPUS.length) runClaim(q); }
 function invertClaim(c){ 
   const swaps = [['was not','was'],['was','was not'],['cannot','can'],['can','cannot'],['strongest','weakest'],['weakest','strongest'],['viable','not viable'],['not viable','viable']];
-  let out = c;
-  for(const [a,b] of swaps) if(out.toLowerCase().includes(a)) return out.replace(new RegExp(a,'i'), b);
+  for(const [a,b] of swaps) if(c.toLowerCase().includes(a)) return c.replace(new RegExp(a,'i'), b);
   return 'It is not true that ' + c.charAt(0).toLowerCase() + c.slice(1);
 }
 function invertAndSearch(){ const q = document.getElementById('q').value || (lastRanked[0]?.chunk || ''); if(q) runClaim(invertClaim(q)); }
 function searchStrongestCounter(){ if(lastRanked.length>1) runClaim(lastRanked[1].chunk); }
-function showFullDoc(doc, passage){
-  currentDoc = { doc, passage };
+function showFullDoc(doc){
+  currentDoc = doc;
   document.getElementById('doc-title').innerText = doc.title || 'Source';
   document.getElementById('doc-paper').innerHTML = esc(doc.body || '');
   document.getElementById('doc-modal').classList.add('on');
@@ -505,7 +460,6 @@ function closeDoc(){ document.getElementById('doc-modal').classList.remove('on')
 function newSearch(){ document.getElementById('q').value = ''; document.getElementById('result').classList.remove('on'); document.getElementById('sugs').style.display = 'block'; setFilter('all'); window.scrollTo(0,0); }
 function scrollToSearch(){ document.getElementById('search-section').scrollIntoView({behavior:'smooth'}); }
 document.getElementById('logo').addEventListener('click', () => newSearch());
-window.addEventListener('keydown', e => { if(e.key === 'Escape') closeDoc(); });
 loadCorpus();
 </script>
 </body>
