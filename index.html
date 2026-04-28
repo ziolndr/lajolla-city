@@ -1,466 +1,315 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>lajolla.city — Test a claim against the public record</title>
-<meta name="description" content="Test claims about La Jolla cityhood against the public record. Real documents. Ranked evidence. Multiple perspectives.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='78' font-size='90' text-anchor='middle' font-family='Georgia,serif' font-weight='400'%3EL%3C/text%3E%3C/svg%3E">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Arbiter Municipal — Municipal Coherence Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+</script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
 :root{
-  --bg:#fafaf7;
-  --paper:#ffffff;
-  --ink:#0a0a0a;
-  --ink2:#262626;
-  --ink3:#525252;
-  --ink4:#a3a3a3;
-  --ink5:#d4d4d4;
-  --line:#e8e8e3;
-  --line2:#ededec;
-  --accent:#0a0a0a;
-  --cove:#1e3a5f;
-  --serif:'Fraunces',Georgia,serif;
-  --sans:'Inter',-apple-system,system-ui,sans-serif;
-  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --bg:#fbfbf8; --paper:#ffffff; --ink:#0a0b0d; --muted:#626a75; --dim:#8b93a0;
+  --line:rgba(15,22,32,.12); --line2:rgba(15,22,32,.20);
+  --accent:#2f63d8; --accentSoft:rgba(47,99,216,.105);
+  --good:#2d8b55; --goodSoft:rgba(45,139,85,.12); --bad:#a64242;
+  --badSoft:rgba(166,66,66,.09);
+  --shadow:0 22px 68px rgba(20,28,40,.08);
+  --sans:'Inter',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --serif:'Libre Baskerville',Georgia,serif; --mono:'IBM Plex Mono',monospace;
 }
-html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);}
-body{min-height:100vh;}
-::selection{background:var(--ink);color:var(--bg);}
-
-.shell{width:100%;margin:0 auto;position:relative;}
-.col{max-width:760px;margin:0 auto;padding:0 28px;position:relative;}
-
-.nav{
-  position:fixed;top:18px;left:24px;right:24px;z-index:50;
-  background:rgba(255,255,255,.74);backdrop-filter:saturate(180%) blur(20px);
-  border:1px solid rgba(232,232,227,.85);border-radius:100px;
-  padding:10px 14px 10px 18px;display:flex;align-items:center;justify-content:space-between;gap:18px;
-  max-width:1180px;margin:0 auto;
-}
-.nav-mark{font:500 18px/1 var(--serif);letter-spacing:-.025em;color:var(--ink);cursor:pointer;}
-.nav-mark em{font-style:italic;font-weight:400;color:var(--ink3);}
-.nav-link{font:400 13px/1 var(--sans);color:var(--ink2);padding:9px 16px;border-radius:100px;cursor:pointer;background:transparent;border:none;}
-.nav-link:hover{background:rgba(10,10,10,.06);color:var(--ink);}
-
-.hero{padding:140px 0 80px;position:relative;}
-.hero-inner{max-width:1180px;margin:0 auto;padding:0 28px;}
-.hero-h{font:500 clamp(54px,11vw,150px)/.94 var(--serif);letter-spacing:-.045em;color:var(--ink);margin-bottom:36px;max-width:780px;}
-.hero-h em{font-style:italic;font-weight:400;display:block;color:var(--ink2);font-size:.78em;margin-top:.08em;}
-.hero-dek{font:300 18px/1.5 var(--sans);color:var(--ink3);max-width:520px;margin-bottom:56px;}
-
-.search{position:relative;margin-bottom:24px;border-bottom:2px solid var(--ink);display:flex;align-items:center;padding-bottom:14px;}
-.search:focus-within{border-color:var(--cove);}
-.search-input{flex:1;background:transparent;border:none;padding:14px 0 4px;font:400 clamp(22px,3vw,30px)/1.2 var(--serif);color:var(--ink);outline:none;}
-.search-input::placeholder{color:var(--ink4);font-style:italic;}
-.search-go{flex-shrink:0;width:52px;height:52px;border:none;background:var(--ink);color:var(--paper);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.search-go:hover{background:var(--cove);}
-.search-go svg{width:20px;height:20px;}
-
-.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:28px;margin-bottom:8px;}
-.filters-lbl{font:400 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);margin-right:6px;}
-.filt{font:400 13px/1 var(--sans);color:var(--ink2);background:transparent;border:1px solid var(--line);border-radius:100px;padding:9px 16px;cursor:pointer;}
-.filt.on{background:var(--ink);border-color:var(--ink);color:var(--paper);}
-.filt span{font:400 11px/1 var(--mono);opacity:.5;}
-
-.sugs{margin-bottom:32px;}
-.sugs-lbl{font:400 11px/1 var(--mono);color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;}
-.sug-list{display:flex;flex-direction:column;border-top:1px solid var(--line);}
-.sug-row{display:flex;align-items:center;gap:14px;padding:14px 4px;border-bottom:1px solid var(--line);cursor:pointer;font:400 15px/1.4 var(--sans);color:var(--ink2);}
-.sug-row:hover{padding-left:14px;color:var(--ink);}
-.sug-row-arrow{margin-left:auto;color:var(--ink5);}
-
-.loading{display:none;align-items:center;gap:12px;padding:24px 0;font:400 13px/1 var(--mono);color:var(--ink3);}
-.loading.on{display:flex;}
-.loading-bar{flex:1;height:1px;background:var(--line);position:relative;overflow:hidden;}
-.loading-bar::after{content:'';position:absolute;top:0;left:0;height:100%;width:30%;background:var(--ink);animation:sweep 1.1s ease-in-out infinite;}
-@keyframes sweep{0%{left:-30%;}100%{left:100%;}}
-
-.result{display:none;margin-top:8px;animation:rise .35s cubic-bezier(.2,0,0,1);}
-.result.on{display:block;}
-@keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-
-.r-back{display:inline-flex;align-items:center;gap:6px;font:400 12px/1 var(--mono);color:var(--ink3);background:transparent;border:none;padding:6px 0;margin-bottom:18px;cursor:pointer;text-transform:uppercase;}
-.r-back:hover{color:var(--ink);transform:translateX(-2px);}
-.r-q{font:300 13px/1.4 var(--mono);color:var(--ink4);margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;}
-.r-q-lbl{text-transform:uppercase;letter-spacing:.08em;font-size:10px;}
-.r-q-val{color:var(--ink2);font-style:italic;font-family:var(--serif);font-size:15px;}
-
-.r-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:28px;margin-bottom:14px;}
-.r-tag{font:400 10px/1 var(--mono);color:var(--ink4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;}
-.r-arg{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;}
-.r-arg-copy{flex:1;}
-.r-arg-k{font:400 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink4);margin-bottom:6px;}
-.r-arg-title{font:400 18px/1.35 var(--serif);color:var(--ink);letter-spacing:-.006em;}
-.r-source-title{font:400 11px/1.4 var(--sans);color:var(--ink3);margin-top:4px;}
-.r-support-badge{font:400 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--cove);background:rgba(30,58,95,.08);padding:6px 12px;border-radius:100px;white-space:nowrap;}
-.r-match{background:rgba(10,10,10,.02);border-left:3px solid var(--cove);padding:16px 18px;margin:16px 0;}
-.r-match-lbl{font:400 9px/1 var(--mono);color:var(--ink4);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;}
-.r-match-text{font:400 15px/1.7 var(--serif);color:var(--ink2);line-height:1.65;}
-.r-meta{display:flex;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid var(--line);gap:24px;}
-.r-score-num{font:500 28px/1 var(--serif);color:var(--ink);font-variant-numeric:tabular-nums;}
-.r-score-lbl{font:400 9px/1 var(--mono);color:var(--ink4);text-transform:uppercase;letter-spacing:.1em;}
-.r-meta-dots{flex:1;font:300 11px/1.4 var(--mono);color:var(--ink4);text-align:right;}
-
-.r-actions{margin-top:20px;display:flex;gap:12px;}
-.r-open,.r-full{border:none;cursor:pointer;border-radius:999px;padding:10px 18px;font:500 13px/1 var(--sans);}
-.r-open{background:var(--ink);color:var(--paper);}
-.r-open:hover{background:var(--cove);}
-.r-full{background:transparent;color:var(--ink3);border:1px solid var(--line);}
-
-.r-also{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:14px;}
-.r-also-head{padding:16px 24px;border-bottom:1px solid var(--line);font:400 10px/1 var(--mono);color:var(--ink4);text-transform:uppercase;letter-spacing:.1em;}
-.r-also-row{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line2);gap:16px;cursor:pointer;}
-.r-also-row:last-child{border-bottom:none;}
-.r-also-row:hover{background:var(--bg);}
-.r-also-n{font:300 12px/1 var(--mono);color:var(--ink4);width:28px;font-variant-numeric:tabular-nums;}
-.r-also-body{flex:1;min-width:0;}
-.r-also-title{font:500 14px/1.3 var(--sans);color:var(--ink);margin-bottom:4px;}
-.r-also-snip{font:300 12px/1.4 var(--sans);color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.r-also-sc{font:400 11px/1 var(--mono);color:var(--ink3);font-variant-numeric:tabular-nums;flex-shrink:0;margin-left:12px;}
-.r-also-badge{font:400 9px/1 var(--mono);color:var(--cove);background:rgba(30,58,95,.08);padding:4px 8px;border-radius:100px;white-space:nowrap;margin-left:8px;}
-.sig-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
-.sig-badge{font:400 9px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);padding:5px 8px;border:1px solid var(--line);border-radius:999px;}
-
-.r-summary{background:rgba(10,10,10,.02);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px;}
-.r-summary-head{font:400 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink4);margin-bottom:14px;}
-.r-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.r-summary-text{font:400 14px/1.6 var(--sans);color:var(--ink2);}
-.r-summary-points{display:flex;flex-direction:column;gap:10px;}
-.r-axis{padding-top:8px;border-top:1px solid var(--line2);}
-.r-axis:first-child{border-top:none;padding-top:0;}
-.r-axis-k{font:400 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink4);margin-bottom:4px;}
-.r-axis-v{font:400 12px/1.4 var(--sans);color:var(--ink2);}
-.stress-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
-.stress-btn{appearance:none;border:1px solid var(--line);background:transparent;color:var(--ink2);border-radius:999px;padding:8px 14px;cursor:pointer;font:400 12px/1 var(--sans);}
-.stress-btn:hover{background:rgba(10,10,10,.03);}
-.cache-note{font:400 9px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);margin-top:12px;display:inline-block;}
-.loading-pill{display:inline-flex;align-items:center;gap:8px;font:400 10px/1 var(--mono);color:var(--ink4);padding:8px 12px;border:1px solid var(--line);border-radius:999px;}
-.loading-dot{width:6px;height:6px;border-radius:999px;background:var(--ink4);animation:pulse 1s infinite;}
-@keyframes pulse{0%,100%{opacity:.2}50%{opacity:.9}}
-
-.stat-panel{width:100%;background:var(--cove);color:var(--paper);padding:80px 0;}
-.stat-panel-inner{max-width:1180px;margin:0 auto;padding:0 48px;display:grid;grid-template-columns:1.4fr 1fr;gap:64px;align-items:end;}
-.stat-panel-num{font:500 clamp(80px,12vw,180px)/.85 var(--serif);letter-spacing:-.05em;}
-.stat-panel-eye{font:400 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.55);}
-.stat-panel-cap{font:300 18px/1.5 var(--sans);color:rgba(255,255,255,.92);margin-top:12px;}
-.img-full-frame{width:100%;height:60vh;min-height:400px;background-size:cover;background-position:center;}
-.about-section{padding:80px 0;}
-.about-lbl{font:400 11px/1 var(--mono);color:var(--ink4);text-transform:uppercase;margin-bottom:16px;}
-.about p{font:300 14px/1.7 var(--sans);color:var(--ink3);margin-bottom:14px;max-width:600px;}
-.submit-inline{margin-top:18px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font:400 12px/1.5 var(--mono);color:var(--ink4);}
-.submit-addr{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--ink3);}
-.err{padding:24px;font:400 13px/1.5 var(--mono);color:#dc2626;background:var(--paper);border:1px solid #fee2e2;border-radius:12px;}
-.doc-modal{position:fixed;inset:0;z-index:120;display:none;background:rgba(10,10,10,.45);backdrop-filter:blur(8px);}
-.doc-modal.on{display:block;}
-.doc-wrap{position:absolute;inset:28px;max-width:900px;margin:auto;background:var(--paper);border:1px solid var(--line);border-radius:20px;overflow:auto;max-height:90vh;}
-.doc-top{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
-.doc-title{font:500 24px/1.2 var(--serif);}
-.doc-close{background:transparent;border:none;font-size:32px;cursor:pointer;line-height:1;padding:0 8px;}
-.doc-paper{max-width:760px;margin:0 auto;padding:28px 24px;white-space:pre-wrap;font:400 15px/1.7 var(--serif);color:var(--ink2);}
-.doc-pass{background:rgba(30,58,95,.12);border-radius:2px;}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth} body{min-height:100vh;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,textarea,select{font:inherit;color:inherit} button{cursor:pointer;border:0;background:none} a{text-decoration:none;color:inherit}.hidden{display:none!important}
+body:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 78% 0%,rgba(47,99,216,.06),transparent 28%),linear-gradient(180deg,#fff 0%,#fbfbf8 42%,#f6f6f1 100%)}
+body:after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.28;background-image:radial-gradient(rgba(0,0,0,.045) .55px,transparent .55px);background-size:3px 3px}
+.page{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}.topbar{height:74px;border-bottom:1px solid var(--line);background:rgba(255,255,252,.92);backdrop-filter:blur(18px);display:grid;grid-template-columns:1fr auto;align-items:center;padding:0 40px;position:sticky;top:0;z-index:20}.brand{display:flex;align-items:center;gap:13px;font-size:21px;font-weight:720;letter-spacing:-.04em}.brand-symbol{width:32px;height:32px;display:grid;place-items:center;position:relative}.brand-symbol:before{content:"";width:26px;height:26px;background:linear-gradient(135deg,#07080a 0%,#07080a 62%,var(--accent) 100%);clip-path:polygon(50% 0,58% 34%,100% 50%,58% 66%,50% 100%,42% 66%,0 50%,42% 34%)}.brand-symbol:after{content:"";position:absolute;width:5px;height:5px;border-radius:50%;background:#fff}.brand-product{font-weight:420;color:#66707c}.api-pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;background:#fff;padding:10px 14px;font-family:var(--mono);font-size:10px;text-transform:uppercase;color:#69717c}.api-pill:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}.api-pill.running:before{background:var(--accent);box-shadow:0 0 0 4px var(--accentSoft)}.api-pill.error:before{background:var(--bad)}
+.console{width:min(1800px,calc(100vw - 80px));margin:22px auto 42px;flex:1}.console-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:20px}.console-title h1{font-family:var(--serif);font-size:28px;line-height:1.1;letter-spacing:-.035em;font-weight:700}.console-title p{color:#56606c;margin-top:8px;font-size:14px}.top-actions{display:flex;gap:12px;align-items:center}.btn{height:44px;padding:0 18px;border:1px solid var(--line2);border-radius:8px;background:#fff;display:inline-flex;align-items:center;gap:9px;font-weight:650;font-size:13px;box-shadow:0 8px 24px rgba(20,28,40,.035);transition:transform .08s ease,border-color .16s ease,background .16s ease}.btn:hover{border-color:var(--accent);color:var(--accent)}.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 12px 26px rgba(47,99,216,.22)}.btn.primary:hover{background:#1f55cb;color:#fff}.btn:active,.seat-tab:active,.claim-chip:active,.details-btn:active{transform:translateY(1px) scale(.985)}.btn.loading{pointer-events:none;opacity:.78}.btn.loading:after{content:"";width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;display:inline-block;animation:spin .72s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.seat-tabs{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 8px 28px rgba(20,28,40,.035);margin-bottom:10px}.seat-tab{min-height:78px;display:flex;align-items:center;gap:14px;text-align:left;padding:14px 18px;border-right:1px solid var(--line);color:#77808c;transition:background .16s ease,color .16s ease}.seat-tab:last-child{border-right:0}.seat-tab svg{width:34px;height:34px;min-width:34px;stroke-width:1.6}.seat-tab strong{display:block;font-size:13px;color:#111}.seat-tab span{display:block;font-size:12px;color:#68717e;margin-top:4px}.seat-tab small{display:block;font-family:var(--mono);font-size:9px;text-transform:uppercase;color:var(--accent);margin-top:7px}.seat-tab.selected{background:var(--accentSoft);box-shadow:inset 0 -3px 0 var(--accent);color:var(--accent)}.seat-tab:not(.selected):hover{background:#f7f8fb;color:#24314a}.workspace{display:grid;grid-template-columns:470px 1fr;gap:20px;align-items:start}.side-panel,.main-panel,.evidence-panel{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.9);box-shadow:var(--shadow);overflow:hidden}.side-panel{position:sticky;top:94px}.panel-section{padding:18px;border-bottom:1px solid var(--line)}.panel-section:last-child{border-bottom:0}.section-title{font-size:14px;font-weight:720;letter-spacing:-.01em;margin-bottom:14px}.upload{border:1px dashed var(--line2);border-radius:12px;min-height:90px;display:grid;place-items:center;text-align:center;padding:14px;color:#66707c;background:#fff;cursor:pointer;transition:border-color .16s ease,background .16s ease}.upload:hover{border-color:var(--accent);background:var(--accentSoft)}.upload svg{width:20px;height:20px;margin-bottom:4px;color:#111}.upload b{display:block;color:#111;margin-bottom:3px;font-size:12px}.upload span{display:block;font-size:12px;line-height:1.4}.upload-name{margin-top:6px;color:var(--accent);font-family:var(--mono);font-size:10px}
+.record-select{display:flex;gap:6px;margin-top:8px}
+.rec-opt{flex:1;height:34px;border:1px solid var(--line);border-radius:7px;background:#fff;padding:0 10px;text-align:left;font-family:var(--mono);font-size:10px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec-opt:hover{border-color:var(--accent);color:var(--accent);background:var(--accentSoft)}
+.rec-opt.active{border-color:var(--accent);color:#fff;background:var(--accent)}
+.rec-opt svg{width:14px;height:14px;flex:none;opacity:.5}
+.threshold{display:grid;gap:10px}.threshold-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:650}.threshold-row strong{font-family:var(--mono);font-size:12px;color:#5f6875}.threshold input{width:100%;accent-color:var(--accent)}.claim-search{display:grid;gap:11px}.claim-label{font-size:14px;font-weight:720;letter-spacing:-.01em}.search-row{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:11px 13px;min-height:48px}.search-row:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px var(--accentSoft)}.search-icon{width:16px;height:16px;color:#87909d;flex:none}.claim-input{width:100%;border:0;background:transparent;outline:0;font-size:13px;color:#111;min-width:0}.preset-claims{display:grid;grid-template-columns:1fr 1fr;gap:8px}.claim-chip{border:1px solid var(--line);border-radius:8px;background:#fff;padding:11px 12px;min-height:60px;text-align:left;display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:12px;line-height:1.25;color:#46505d;transition:border-color .16s ease,background .16s ease}.claim-chip:hover{border-color:var(--accent);background:var(--accentSoft);color:#111}.claim-chip .num{width:22px;height:22px;border-radius:50%;background:#f1f2f5;display:grid;place-items:center;font-family:var(--mono);font-size:10px;color:#111}.claim-chip.active{border-color:var(--accent);background:var(--accentSoft)}.claim-chip.active .num{background:var(--accent);color:#fff}
+.main-panel{min-height:480px}.progress-row{height:62px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;padding:0 22px}.progress-copy{display:flex;align-items:center;gap:11px;font-size:13px;font-weight:650}.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(47,99,216,.22);border-top-color:var(--accent);animation:spin .8s linear infinite;display:none}.progress-row.running .spinner{display:block}.progress-small{font-family:var(--mono);font-size:11px;color:#68717d}.progress-bar{height:7px;border-radius:999px;background:#e7e9ee;overflow:hidden}.progress-fill{height:100%;width:0%;background:var(--accent);border-radius:999px;transition:width .28s ease}.updated{font-size:12px;color:#7b8490}
+.mismatch-warning{display:none;padding:12px 22px;border-bottom:1px solid var(--line);background:var(--badSoft);font-size:12px;color:var(--bad);font-weight:550;line-height:1.45;align-items:center;gap:10px}.mismatch-warning.show{display:flex}.mismatch-warning svg{width:16px;height:16px;flex:none;min-width:16px}.mismatch-warning span{flex:1}
+.seat-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:12px;padding:16px}.result-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:18px;min-height:228px;display:flex;flex-direction:column;justify-content:space-between}.result-topline{display:flex;align-items:start;justify-content:space-between;gap:12px}.result-title{display:flex;gap:12px;align-items:start}.result-title svg{width:30px;height:30px;color:var(--accent);stroke-width:1.6}.result-title h3{font-family:var(--serif);font-size:20px;letter-spacing:-.02em}.result-title p{font-size:12px;color:#5f6875;line-height:1.35;margin-top:6px;max-width:280px}.badge{border-radius:999px;padding:7px 9px;font-size:11px;font-weight:650;background:#eef1f8;color:#36547c}.badge.complete{background:var(--goodSoft);color:#236f42}.scoreline{display:flex;align-items:end;gap:11px;margin-top:18px}.score{font-family:var(--serif);font-size:44px;letter-spacing:-.05em}.score-label{font-size:12px;color:#68717d;margin-bottom:8px}.scorebar{height:6px;border-radius:999px;background:#e6e8ed;overflow:hidden;margin-top:8px}.scorebar span{display:block;height:100%;width:var(--w);background:var(--accent);border-radius:999px}.card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px}.analysis-state{display:flex;align-items:center;gap:8px;font-size:12px;color:#53606e}.analysis-state:before{content:"";width:16px;height:16px;border-radius:50%;border:2px solid var(--good);background:radial-gradient(circle,var(--good) 2px,transparent 3px)}.details-btn{height:36px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 13px;font-size:12px;font-weight:650}.details-btn:hover{border-color:var(--accent);color:var(--accent)}.empty-seat{border:1px dashed var(--line2);border-radius:12px;background:#fbfbf8;padding:18px;display:grid;place-items:center;text-align:center;color:#77808c;min-height:228px}.empty-seat b{display:block;color:#111;margin-bottom:5px}
+.evidence-panel{margin-top:12px}.evidence-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 20px;border-bottom:1px solid var(--line)}.evidence-title h2{font-family:var(--serif);font-size:19px;letter-spacing:-.02em}.evidence-title p{font-size:12px;color:#68717d;margin-top:4px}.evidence-actions{display:flex;align-items:center;gap:10px}.filter{height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 12px;font-size:12px;color:#2f3843}.evidence-table{width:100%;border-collapse:collapse;font-size:13px}.evidence-table th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#68717d;text-align:left;font-weight:650;border-bottom:1px solid var(--line);padding:10px 16px}.evidence-table td{border-bottom:1px solid var(--line);padding:12px 16px;vertical-align:top}.evidence-table tr:hover td{background:#fbfcff}.rank{font-family:var(--mono);color:#111}.source-cell{display:flex;gap:10px;align-items:start;min-width:200px}
+.source-badge{width:40px;height:22px;border-radius:4px;display:grid;place-items:center;font-family:var(--mono);font-size:7px;letter-spacing:.04em;text-transform:uppercase;color:#fff;flex:none;font-weight:600}
+.source-badge.sb-ceqa{background:#2d8b55}
+.source-badge.sb-lafco{background:#2f63d8}
+.source-badge.sb-elections{background:#9a7b3c}
+.source-badge.sb-brown-act{background:#7c5ca6}
+.source-badge.sb-record{background:#555}
+.source-title{font-weight:650;font-size:12px}.source-page{font-family:var(--mono);font-size:10px;color:#68717d;margin-top:2px}.excerpt{color:#2f3742;line-height:1.38;max-width:620px}
+.coh{font-family:var(--mono);font-weight:650;color:var(--good)}
+.coh-low{font-family:var(--mono);font-weight:650;color:var(--bad)}
+.open-record{font-size:12px;color:#334154;white-space:nowrap}.open-record:hover{color:var(--accent)}.show-more{width:100%;height:46px;background:#fff;color:var(--accent);font-weight:650;border-top:0}.show-more:hover{background:#fbfcff}.show-more.hidden-more{display:none}.details-drawer{display:none;border-top:1px solid var(--line);background:#fbfcff;padding:16px 20px}.details-drawer.open{display:block}.drawer-grid{display:grid;grid-template-columns:240px 1fr;gap:18px}.drawer-meta{font-family:var(--mono);font-size:11px;color:#69717d;line-height:1.75}.drawer-passage{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px;font-size:13px;line-height:1.55;color:#303944}.empty-evidence{padding:26px;text-align:center;color:#6b7280}.empty-evidence b{display:block;color:#111;margin-bottom:6px}.footer{height:38px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:#8b93a0}.toast{position:fixed;right:28px;bottom:28px;z-index:99;border:1px solid var(--line2);background:#fff;border-radius:10px;padding:13px 16px;color:#111;font-size:12px;box-shadow:0 18px 60px rgba(0,0,0,.12);opacity:0;transform:translateY(16px);transition:.22s}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:1320px){.topbar{grid-template-columns:1fr auto}.console{width:calc(100vw - 36px)}.workspace{grid-template-columns:1fr}.side-panel{position:static}.seat-tabs{grid-template-columns:repeat(7,minmax(180px,1fr));overflow-x:auto}.drawer-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.topbar{padding:0 18px}.brand-product{display:none}.console{width:calc(100vw - 24px);margin-top:14px}.console-head{display:block}.top-actions{margin-top:16px;display:grid;grid-template-columns:1fr 1fr}.seat-tabs{grid-template-columns:1fr}.workspace{gap:12px}.preset-claims{grid-template-columns:1fr}.progress-row{grid-template-columns:1fr;gap:10px;height:auto;padding:16px}.evidence-table{font-size:12px}.evidence-table th:nth-child(3),.evidence-table td:nth-child(3){display:none}.mismatch-warning.show{flex-direction:column;align-items:start;gap:6px}}
 </style>
 </head>
 <body>
-<div class="shell">
-  <nav class="nav">
-    <div class="nav-mark" id="logo">lajolla<em>.city</em></div>
-    <div class="nav-links">
-      <button class="nav-link" onclick="document.querySelector('.about-section').scrollIntoView({behavior:'smooth'})">About</button>
-      <button class="nav-link" onclick="scrollToSearch()">Search</button>
-    </div>
-  </nav>
-
-  <section class="hero">
-    <div class="hero-inner">
-      <h1 class="hero-h">Test<br>claims against<br>the <em>public record.</em></h1>
-      <p class="hero-dek">Test claims about La Jolla cityhood against the fiscal, legal, and procedural record. ARBITER ranks the passages that best support, weaken, or complicate a claim — with every result grounded in source material.</p>
-      <div class="search" id="search-section">
-        <input class="search-input" id="q" placeholder="Enter a claim about cityhood." autocomplete="off" onkeydown="if(event.key==='Enter')go()">
-        <button class="search-go" onclick="go()" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
-      </div>
-      <div class="submit-inline"><span class="submit-lead">Contribute:</span><a class="submit-addr" href="mailto:record@lajolla.city">record@lajolla.city</a></div>
-      <div class="filters" id="filters"></div>
-    </div>
-  </section>
-
-  <section class="work"><div class="col">
-    <div class="loading" id="loading"><span>Searching</span><div class="loading-bar"></div><span id="loading-count"></span></div>
-    <div class="sugs" id="sugs"><div class="sugs-lbl">Try one of these</div><div class="sug-list" id="sug-list"></div></div>
-    <div class="result" id="result"></div>
-  </div></section>
-
-  <section class="stat-panel"><div class="stat-panel-inner"><div class="stat-panel-num">46,000</div><div class="stat-panel-side"><div class="stat-panel-eye">Residents · proposed boundary</div><div class="stat-panel-cap">Larger than Del Mar, Coronado, Solana Beach, and Rancho Santa Fe combined.</div></div></div></section>
-  
-  <section class="about-section"><div class="col"><div class="about"><div class="about-lbl">About this tool</div><p><strong>lajolla.city</strong> is an independent research desk for the La Jolla cityhood movement. Ask any question about incorporation in plain English. The exact passage that answers it is returned, with source and coherence score.</p><p>The corpus covers the Preliminary Comprehensive Fiscal Analysis, California Government Code on incorporation and LAFCO procedure, Coastal Commission jurisdiction, comparisons to Malibu, Coronado, Del Mar, and Rancho Palos Verdes, the complete legal record of the San Diego vs LAFCO lawsuit, and the current status of the Association for the City of La Jolla as of April 2026.</p><div class="about-foot">Independent archival interface. Built in La Jolla.</div></div></div></section>
-</div>
-
-<div id="doc-modal" class="doc-modal"><div class="doc-wrap"><div class="doc-top"><div class="doc-title" id="doc-title"></div><button class="doc-close" onclick="closeDoc()">×</button></div><div class="doc-paper" id="doc-paper"></div></div></div>
-
-<script>
-const API = 'https://api.arbiter.traut.ai/public/compare';
-const CORPUS_URL = './corpus.json';
-const CACHE_VERSION = 'v7';
-const STOP_WORDS = new Set(['that','this','these','those','their','there','would','could','should','about','from','with','without','into','during','because','then','than','very','just','but','for','not','are','was','were','been','being','have','has','had','having','do','does','did','doing','the','a','an','and','of','to','in','for','on','at','by','is','as']);
-
-let activeFilter = 'all';
-let CORPUS = [];
-let DOC_INDEX = new Map();
-let FILTERS = [];
-let lastRanked = [];
-let currentDoc = null;
-
-const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const cleanText = t => String(t || '').replace(/\s+/g, ' ').trim();
-const truncate = (raw, maxLen) => {
-  let t = cleanText(raw);
-  if (t.length <= maxLen) return t;
-  let cut = t.slice(0, maxLen);
-  let last = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
-  if (last > maxLen * 0.55) cut = cut.slice(0, last + 1);
-  return cut.trim() + '…';
-};
-
-const DEFAULT_CLAIMS = [
-  'San Diego’s strongest attack is procedural rather than fiscal',
-  'Revenue neutrality makes incorporation unworkable',
-  'The petition validation process was flawed',
-  'La Jolla should become its own city because the record supports fiscal viability'
-];
-
-function prettyTitle(raw){
-  const s = String(raw || '').trim();
-  if (!s) return 'Source document';
-  return s.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim();
-}
-function canonTitle(entry){ return entry?.source || entry?.title || 'Source document'; }
-function scoreStrength(score){
-  if (score >= 0.8) return 'Strong support';
-  if (score >= 0.65) return 'Meaningful support';
-  if (score >= 0.45) return 'Partial support';
-  return 'Weak support';
-}
-function inferMeta(item){
-  const blob = (cleanText(item.title) + ' ' + cleanText(item.text)).toLowerCase();
-  let author = 'Record', docType = 'ADMINISTRATIVE';
-  if (blob.includes('mayor gloria') || blob.includes('city of san diego')) author = 'City of San Diego';
-  else if (blob.includes('lafco')) author = 'LAFCO';
-  else if (blob.includes('aclj')) author = 'ACLJ';
-  if (blob.includes('letter') || blob.includes('statement')) docType = 'POLITICAL';
-  if (blob.includes('rfp') || blob.includes('certificate') || blob.includes('agenda')) docType = 'ADMINISTRATIVE';
-  if (blob.includes('lawsuit') || blob.includes('court')) docType = 'LEGAL';
-  return { author, docType };
-}
-
-function buildDocIndex(){
-  const bySource = new Map();
-  for (const item of CORPUS){
-    const key = canonTitle(item);
-    if (!bySource.has(key)) bySource.set(key, []);
-    bySource.get(key).push(item);
-  }
-  DOC_INDEX = new Map([...bySource.entries()].map(([key, items]) => {
-    return [key, {
-      id: key, title: prettyTitle(key), corpusLabel: items[0]?.cat || 'Record',
-      items, body: items.map(x => String(x.text || '').trim()).join('\n\n'),
-      meta: inferMeta(items[0])
-    }];
-  }));
-}
-function buildFilters(){
-  const counts = new Map();
-  for (const item of CORPUS) counts.set(item.cat || 'Uncategorized', (counts.get(item.cat) || 0) + 1);
-  FILTERS = [...counts.entries()].map(([id, count]) => ({ id, label:id, count })).sort((a,b) => a.label.localeCompare(b.label));
-  const wrap = document.getElementById('filters');
-  let out = '<span class="filters-lbl">Sources</span>';
-  out += `<button class="filt ${activeFilter==='all'?'on':''}" onclick="setFilter('all')">All <span>${CORPUS.length}</span></button>`;
-  FILTERS.forEach(f => out += `<button class="filt ${activeFilter===f.id?'on':''}" onclick="setFilter('${f.id}')">${esc(f.label)} <span>${f.count}</span></button>`);
-  wrap.innerHTML = out;
-}
-function setFilter(id){ activeFilter = id; buildFilters(); buildSugs(); }
-function buildSugs(){
-  document.getElementById('sug-list').innerHTML = DEFAULT_CLAIMS.map(q =>
-    `<div class="sug-row" onclick="setQ(${JSON.stringify(q)})">${esc(q)}<span class="sug-row-arrow">→</span></div>`
-  ).join('');
-}
-function setQ(q){ document.getElementById('q').value = q; go(); }
-function activeCorpus(){ return activeFilter === 'all' ? CORPUS : CORPUS.filter(d => (d.cat || 'Uncategorized') === activeFilter); }
-
-async function loadCorpus(){
-  try{
-    const r = await fetch(CORPUS_URL);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    CORPUS = await r.json();
-    CORPUS = CORPUS.map((item, idx) => ({ ...item, __id: idx, cat: item.cat || 'Uncategorized', source: item.source || item.title, meta: inferMeta(item) }));
-    buildDocIndex();
-    buildFilters();
-    buildSugs();
-    document.querySelector('.sugs-lbl').textContent = `Try one of these · ${CORPUS.length} passages`;
-  } catch(e){
-    document.getElementById('sugs').innerHTML = `<div class="err">Failed to load corpus: ${e.message}</div>`;
-  }
-}
-
-function cacheKey(claim, filter){ return `${CACHE_VERSION}::${filter}::${cleanText(claim)}`; }
-function saveCache(key, payload){ try{ localStorage.setItem(key, JSON.stringify({ts:Date.now(), payload})); } catch(e){} }
-function loadCache(key){ try{ const raw = localStorage.getItem(key); if(raw) return JSON.parse(raw).payload; } catch(e){} return null; }
-
-async function compareClaim(query, docs){
-  const queryLower = query.toLowerCase();
-  const keywords = queryLower.split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w));
-  const scored = docs.map(doc => {
-    const text = (doc.text + ' ' + (doc.title || '')).toLowerCase();
-    let score = 0;
-    for (const kw of keywords) { const matches = (text.match(new RegExp(kw, 'gi')) || []).length; score += matches * 2; }
-    if (text.includes(queryLower)) score += 50;
-    return { doc, score };
-  });
-  const topCandidates = scored.sort((a,b) => b.score - a.score).slice(0, 48);
-  const candidates = topCandidates.map(x => cleanText(x.doc.text));
-  if (!candidates.length) return [];
-  
-  const r = await fetch(API, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ query, candidates })
-  });
-  if (!r.ok) throw new Error(`API ${r.status}`);
-  const data = await r.json();
-  const ranked = (data.all || data.results || []).sort((a,b) => b.score - a.score);
-  
-  const results = [], seen = new Set();
-  for (const item of ranked){
-    const matchDoc = topCandidates.find(tc => cleanText(tc.doc.text) === item.text)?.doc;
-    if (!matchDoc || seen.has(matchDoc.__id)) continue;
-    seen.add(matchDoc.__id);
-    const doc = DOC_INDEX.get(canonTitle(matchDoc)) || {
-      id: canonTitle(matchDoc), title: prettyTitle(matchDoc.title || matchDoc.source),
-      corpusLabel: matchDoc.cat, body: matchDoc.text, items: [matchDoc],
-      meta: matchDoc.meta || inferMeta(matchDoc)
-    };
-    results.push({ doc, hit: matchDoc, chunk: cleanText(matchDoc.text), score: item.score });
-    if (results.length >= 10) break;
-  }
-  return results;
-}
-
-function renderResult(claim, results, ms, totalPassages, cached=false){
-  if (!results.length){
-    document.getElementById('result').innerHTML = '<div class="err">No relevant passages found. Try rephrasing.</div>';
-    return;
-  }
-  const top = results[0];
-  const others = results.slice(1);
-  const spread = others.length ? (top.score - others[0].score) : 0;
-  
-  const html = `
-    <button class="r-back" onclick="newSearch()">← New search</button>
-    <div class="r-q"><span class="r-q-lbl">Claim</span><span class="r-q-val">${esc(claim)}</span></div>
-    <div class="r-summary">
-      <div class="r-summary-head">⚖️ Record analysis</div>
-      <div class="r-summary-grid">
-        <div class="r-summary-text"><strong>${scoreStrength(top.score)}</strong>${others.length && others[0].score > 0.65 ? ' · Counter-evidence also present in the record.' : ''}</div>
-        <div class="r-summary-points">
-          <div class="r-axis"><div class="r-axis-k">Top coherence</div><div class="r-axis-v">${top.score.toFixed(3)}</div></div>
-          <div class="r-axis"><div class="r-axis-k">Spread</div><div class="r-axis-v">${spread.toFixed(3)}</div></div>
-        </div>
-      </div>
-      <div class="cache-note">${cached ? 'Cached result' : `Queried ${totalPassages} passages → ${results.length} matches in ${ms}ms`}</div>
-      <div class="stress-row">
-        <button class="stress-btn" onclick="invertAndSearch()">↺ Invert claim</button>
-        <button class="stress-btn" onclick="searchStrongestCounter()">⚡ Test strongest counter</button>
-      </div>
-    </div>
-    <div class="r-card">
-      <div class="r-tag">📄 ${esc(top.hit.cat || 'Source')}</div>
-      <div class="r-arg">
-        <div class="r-arg-copy">
-          <div class="r-arg-k">Argument from record</div>
-          <div class="r-arg-title">${esc(truncate(top.chunk, 100))}</div>
-          <div class="r-source-title">${esc(top.doc.title)}</div>
-          <div class="sig-badges"><span class="sig-badge">${esc(top.doc.meta?.docType || 'RECORD')}</span><span class="sig-badge">${esc(top.doc.meta?.author || 'Record')}</span></div>
-        </div>
-        <div class="r-support-badge">${scoreStrength(top.score)}</div>
-      </div>
-      <div class="r-match"><div class="r-match-lbl">📖 Full passage</div><div class="r-match-text">${esc(top.chunk)}</div></div>
-      <div class="r-meta">
-        <div class="r-score"><div class="r-score-num">${top.score.toFixed(3)}</div><div class="r-score-lbl">Coherence</div></div>
-        <div class="r-meta-dots"><span>${ms}ms</span> · <span>${totalPassages} passages</span></div>
-      </div>
-      <div class="r-actions">
-        <button class="r-open" onclick="showFullDoc(${JSON.stringify({title:top.doc.title, body:top.doc.body})})">Open source</button>
-      </div>
-    </div>
-    ${others.length ? `<div class="r-also"><div class="r-also-head">📋 Other relevant passages (${others.length})</div>${
-      others.map((r,i)=>`
-        <div class="r-also-row" onclick="showFullDoc(${JSON.stringify({title:r.doc.title, body:r.doc.body})})">
-          <div class="r-also-n">${String(i+1).padStart(2,'0')}</div>
-          <div class="r-also-body">
-            <div class="r-also-title">${esc(r.doc.title)}</div>
-            <div class="r-also-snip">${esc(truncate(r.chunk, 120))}</div>
+<div class="page">
+  <header class="topbar"><a class="brand" href="#top"><span class="brand-symbol"></span><span>Arbiter</span><span class="brand-product">Municipal</span></a><div class="api-pill" id="apiStatusBtn">Live API connected</div></header>
+  <main class="console" id="top">
+    <div class="console-head"><div class="console-title"><h1>Municipal Coherence Console</h1><p>Evaluate one public record across seven civic seats.</p></div><div class="top-actions"><button class="btn" id="exportReportBtn">Export Report</button><button class="btn primary" id="runAllBtn">Run All Seats</button></div></div>
+    <section class="seat-tabs" id="dock"></section>
+    <section class="workspace">
+      <aside class="side-panel">
+        <div class="panel-section">
+          <div class="section-title">Record</div>
+          <div class="record-select">
+            <button class="rec-opt active" data-key="ceqa" onclick="pickRecord('ceqa')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H10a4 4 0 0 0-4 4v4m0 0a4 4 0 0 1 4 4h4m0 0a4 4 0 0 1-4-4V6"/></svg>
+              CEQA Sample
+            </button>
+            <button class="rec-opt" data-key="lafco" onclick="pickRecord('lafco')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H10a4 4 0 0 0-4 4v4m0 0a4 4 0 0 1 4 4h4m0 0a4 4 0 0 1-4-4V6"/></svg>
+              LAFCO Sample
+            </button>
           </div>
-          <div class="r-also-sc">${r.score.toFixed(3)}</div>
-          <div class="r-also-badge">${scoreStrength(r.score)}</div>
+          <div class="upload" id="uploadZone" style="display:none"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 21h14"/></svg><b>Upload custom record</b><span>PDF or TXT</span><div class="upload-name" id="uploadedName"></div></div></div>
+          <input type="file" id="fileInput" accept=".pdf,.txt" class="hidden">
         </div>
-      `).join('')
-    }</div>` : ''}
-  `;
-  document.getElementById('result').innerHTML = html;
-  document.getElementById('result').classList.add('on');
-  lastRanked = results;
+        <div class="panel-section threshold"><div class="threshold-row"><span>Coherence Threshold</span><strong id="thresholdValue">0.68</strong></div><input type="range" id="thresholdSlider" min="0" max="100" step="1" value="68"></div>
+        <div class="panel-section claim-search"><div class="claim-label">Claim / Hypothesis to Test</div><div class="search-row"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="queryInput" class="claim-input" type="search" autocomplete="off" placeholder="Enter a civic claim to score across seats…"></div><div class="preset-claims" id="presetClaims"></div></div>
+      </aside>
+      <section><div class="main-panel"><div class="progress-row" id="progressRow"><div class="progress-copy"><span class="spinner"></span><span id="runLabel">Ready to run selected seats</span><span class="progress-small" id="runCount">0 of 0 seats complete</span></div><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><div class="updated" id="updatedLabel">Updated just now</div></div>
+      <div class="mismatch-warning" id="mismatchWarning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span id="mismatchText"></span><button style="margin-left:auto;font-size:11px;color:var(--bad);font-weight:600;text-decoration:underline;white-space:nowrap" onclick="document.getElementById('mismatchWarning').classList.remove('show')">Dismiss</button></div>
+      <div class="seat-results" id="seatsGrid"></div></div>
+        <div class="evidence-panel" id="evidencePanel"><div class="evidence-head"><div class="evidence-title"><h2 id="evTitleH2">Grounding in Record</h2><p id="evTitleP">Top evidence supporting the selected claim across the record.</p></div><div class="evidence-actions"><select class="filter" id="sourceFilter"><option>All Sources</option><option>record</option><option>lafco</option><option>ceqa</option><option>elections</option><option>brown act</option></select><button class="btn" id="dissentToggle">Show Dissenting</button><button class="btn" id="viewEvidenceBtn">View Full Evidence</button></div></div><table class="evidence-table"><thead><tr><th>Rank</th><th>Source</th><th>Excerpt</th><th>Coherence</th><th>Actions</th></tr></thead><tbody id="evidenceRows"></tbody></table><div class="details-drawer" id="detailsDrawer"></div><button class="show-more" id="showMoreBtn">Show more evidence</button></div>
+      </section>
+    </section>
+  </main><footer class="footer">deterministic · same input → same output → same score · live /public/compare</footer>
+</div><div class="toast" id="toast">Ready</div>
+<script>
+var API='https://api.arbiter.traut.ai/public/compare';
+function $(id){return document.getElementById(id)}
+
+var LAFCO_SAMPLE='LAFCO STAFF REPORT \u2014 SA-25-03\nBACKGROUND: Proponents submitted a petition containing 12,847 signatures. Required threshold: 12,500.\nROV REVIEW: Registrar disqualified 847 signatures. Net valid: 12,000 \u2014 500 short.\nPETITIONER CONTEST: Submitted voter declarations for all 847 disqualified signers.\nLAFCO REVIEW: Staff applied same statutory criteria as ROV but considered additional evidence. Recommendation: reinstate 458 signatures. Net valid: 12,458 \u2014 42 above threshold.\nCOMMISSION ACTION: Vote 4-1 to certify. Dissent: Commissioner Jones argued LAFCO exceeded authority.\nCITY CHALLENGE: City filed writ of mandate alleging arbitrary and capricious action.';
+var CEQA_SAMPLE='CEQA INITIAL STUDY / MITIGATED NEGATIVE DECLARATION\nProject: La Jolla Coastal Access Improvements\nPROJECT DESCRIPTION: Installation of 0.8 miles of accessible pathways, shade structures, and overlook platforms.\nFINDINGS: The Initial Study demonstrates that with mitigation, the project will not have a significant effect on the environment. A Mitigated Negative Declaration is appropriate.\nMITIGATION: Construction noise, traffic control, erosion prevention, biological resource monitoring, public access continuity.\nPUBLIC COMMENT: Residents raised concerns about visual quality, access, coastal vegetation, and cumulative tourism impacts.';
+
+var icons={justice:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M6 7h12M8 7l-4 7h8L8 7ZM16 7l-4 7h8l-4-7ZM5 21h14"/></svg>',residents:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l9-8 9 8"/><path d="M5 10v11h14V10"/><path d="M9 21v-6h6v6"/><path d="M8 8h8"/></svg>',environment:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 4C12 5 7 10 7 18"/><path d="M7 18c4-1 10-5 13-14"/><path d="M6 13c-2 2-3 5-3 8"/></svg>',finance:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18"/><path d="M12 12l7 7"/><path d="M12 12V3A9 9 0 1 1 3 12h9Z"/></svg>',planning:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 21V5h7v16"/><path d="M13 21V9h7v12"/><path d="M7 8h1M7 12h1M7 16h1M16 12h1M16 16h1M3 21h18"/></svg>',commission:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="7" r="3"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/><circle cx="5" cy="10" r="2"/><circle cx="19" cy="10" r="2"/><path d="M2 21v-1a4 4 0 0 1 4-4M22 21v-1a4 4 0 0 0-4-4"/></svg>',records:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h7l2 2h9v10a3 3 0 0 1-3 3H3z"/><path d="M3 6v15"/></svg>'};
+var personas={justice:{name:'Justice',sub:'Legal seat',question:'Does the record support legal compliance and procedural integrity?',preset:'justice'},residents:{name:'Residents',sub:'Community seat',question:'Does the record reflect community needs and public interest?',preset:'resident'},environment:{name:'Environment',sub:'Environmental seat',question:'Does the record address environmental impacts and sustainability?',preset:'environment'},finance:{name:'Finance',sub:'Fiscal seat',question:'Does the record support fiscal viability and cost discipline?',preset:'treasurer'},planning:{name:'Planning',sub:'Land-use seat',question:'Does the record align with planning standards and land-use policy?',preset:'planning'},commission:{name:'Commission',sub:'Governance seat',question:'Does the record support agency authority and deliberative standards?',preset:'commissioner'},records:{name:'Records',sub:'Evidence seat',question:'Is the record complete, traceable, and audit-ready?',preset:'records'}};
+var PRESETS={justice:'As a California Court of Appeal justice. Apply substantial evidence standard. Defer to agency findings where reasonable minds could differ. Do not reweigh evidence or substitute judgment for the agency.',resident:'As a La Jolla resident who signed the petition. Focus on fairness, community representation, whether the process respected voters, and whether my voice was heard.',environment:'As a Sierra Club environmental advocate. Focus on environmental protection, unusual circumstances, mitigation adequacy, and whether the CEQA determination adequately protects natural resources.',treasurer:'As the City Treasurer. Focus on fiscal impact, cost exposure if the decision is overturned, litigation costs, and long-term financial implications.',planning:'As a city planner. Focus on General Plan consistency, zoning regulations, land-use designations, circulation impacts, and long-range planning implications.',commissioner:'As a LAFCO Commissioner. Focus on statutory authority under Government Code \u00A756700 et seq., procedural compliance, deliberation quality, and whether the decision serves the public interest.',records:'As a public-records analyst. Focus on record completeness, source hierarchy, missing exhibits, contradictions, public comments, and whether the evidence trail is audit-ready.'};
+var CLAIM_PRESETS=["San Diego's strongest attack is procedural rather than fiscal",'Revenue neutrality makes incorporation unworkable','The petition validation process was flawed','La Jolla should become its own city because the record supports fiscal viability','The CFA proves La Jolla is financially viable','La Jolla cannot become a viable city without state funding reform'];
+var STATUTORY_CORPUS=[
+  {id:'ceqa-deference',source:'ceqa',text:'Courts afford substantial deference to an agency CEQA findings on matters within agency expertise. The petitioner bears the burden of demonstrating the agency determination is not supported by substantial evidence.'},
+  {id:'ceqa-arbitrary-capricious',source:'ceqa',text:'An agency CEQA determination is arbitrary and capricious if the record lacks substantial evidence to support the finding, the agency failed to proceed in a manner required by law, or the decision was based on legally inadequate analysis.'},
+  {id:'lafco-56707',source:'lafco',text:'Government Code \u00A756707: The local elections official has initial responsibility for verifying petition signatures. LAFCO may conduct its own review of contested signatures when substantial evidence indicates the ROV disqualification was erroneous.'},
+  {id:'lafco-writ',source:'lafco',text:'Government Code \u00A71085: A writ of mandate may be filed to challenge LAFCO certification. The petitioner bears the burden of demonstrating that LAFCO exceeded statutory authority or that the decision is arbitrary and capricious.'},
+  {id:'lafco-substantial-evidence',source:'lafco',text:'Substantial evidence standard: The reviewing court defers to the agency factual findings if there is any reasonable basis in the record to support them. The court does not reweigh evidence or substitute judgment for the agency.'},
+  {id:'elections-330.5',source:'elections',text:'Elections Code \u00A7330.5: A signature disqualified by the ROV may be reinstated by LAFCO upon a showing that the signer was a registered voter at the time of signing.'},
+  {id:'brown-act-record',source:'brown act',text:'Public agency deliberation must be reflected in a record sufficient to show notice, agenda compliance, public opportunity to comment, and the basis for final action.'}
+];
+var SAMPLES={ceqa:{name:'CEQA Sample: La Jolla Coastal Access MND',text:CEQA_SAMPLE},lafco:{name:'LAFCO Sample: La Jolla Cityhood Petition',text:LAFCO_SAMPLE}};
+var uploadedText=CEQA_SAMPLE,currentThreshold=0.68,seats=[],seatResults={},seatCounter=0,lastEvidence=[],activeSample='ceqa';
+var showDissent=false,focusedSeatId=null;
+
+function checkMismatch(query,text){
+  if(!query||!text)return null;
+  var q=query.toLowerCase(),t=text.toLowerCase();
+  var fiscalKw=['fiscal','financial','revenue','cost','budget','tax','treasury','expenditure','fund','viable','viability','cfa','money'];
+  var envKw=['environmental','ceqa','mitigation','habitat','biological','vegetation','erosion','coastal','noise','mnd','eir','negative declaration'];
+  var lafcoKw=['lafco','incorporation','petition','signatures','certification','commissioner','detachment','cityhood'];
+  function count(haystack,needles){var n=0;for(var i=0;i<needles.length;i++){if(haystack.indexOf(needles[i])!==-1)n++}return n}
+  var qF=count(q,fiscalKw),qE=count(q,envKw),qL=count(q,lafcoKw);
+  var tF=count(t,fiscalKw),tE=count(t,envKw),tL=count(t,lafcoKw);
+  if(qF>=2&&tF<2&&tE>=2)return 'Claim contains fiscal/financial language but the loaded record has minimal fiscal content. Low Finance scores likely reflect record-claim misalignment, not genuine claim weakness.';
+  if(qL>=2&&tE>=2&&tL<2)return 'Claim contains incorporation/governance language but the loaded record is a CEQA environmental document. Low governance scores likely reflect record-claim misalignment.';
+  if(qE>=2&&tL>=2&&tE<2)return 'Claim contains environmental language but the loaded record is a LAFCO governance document with minimal environmental content.';
+  return null;
+}
+function updateMismatchUI(){
+  var query=$('queryInput').value.trim();
+  var result=checkMismatch(query,uploadedText||'');
+  if(result){$('mismatchText').textContent=result;$('mismatchWarning').classList.add('show')}
+  else{$('mismatchWarning').classList.remove('show')}
 }
 
-async function runClaim(claim){
-  const loading = document.getElementById('loading');
-  const resultEl = document.getElementById('result');
-  resultEl.classList.remove('on');
-  loading.classList.add('on');
-  document.getElementById('sugs').style.display = 'none';
-  
-  const docs = activeCorpus();
-  const ckey = cacheKey(claim, activeFilter);
-  const cached = loadCache(ckey);
-  if (cached){
-    renderResult(claim, cached.results, cached.ms, docs.length, true);
-    loading.classList.remove('on');
-    return;
+function getDissentEvidence(){
+  var dissent=[];
+  var seatsToCheck=focusedSeatId!==null?seats.filter(function(s){return s.id===focusedSeatId}):seats;
+  seatsToCheck.forEach(function(s){
+    var r=seatResults[s.id];
+    if(!r||!r.results||r.results.length<2)return;
+    var bottom=r.results.slice(-3).reverse();
+    for(var i=0;i<bottom.length;i++)dissent.push(bottom[i]);
+  });
+  return dissent.sort(function(a,b){return a.score-b.score});
+}
+
+function sourceClass(src){return 'sb-'+src.replace(/\s+/g,'-').toLowerCase()}
+function toast(msg){var t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2200)}
+function esc(str){return String(str||'').replace(/[&<>]/g,function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])})}
+function escAttr(str){return String(str||'').replace(/[&<>"']/g,function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])})}
+function setAPI(mode,msg){var b=$('apiStatusBtn');b.classList.remove('running','error');if(mode)b.classList.add(mode);b.textContent=msg}
+function labelForPreset(k){return ({justice:'Justice',resident:'Residents',environment:'Environment',treasurer:'Finance',planning:'Planning',commissioner:'Commission',records:'Records'}[k]||k)}
+function personaKeyForPreset(preset){var found=Object.entries(personas).find(function(e){return e[1].preset===preset});return found?found[0]:'justice'}
+function sourceLabel(item){if(item.fromUpload){return {title:$('uploadedName').textContent||'Uploaded record',sub:'chunk '+(item.corpusIndex-STATUTORY_CORPUS.length+1)}}return {title:'Statutory corpus',sub:item.corpusId}}
+function renderClaimPresets(){var el=$('presetClaims');var qv=$('queryInput').value;el.innerHTML=CLAIM_PRESETS.map(function(c,i){return '<button class="claim-chip '+(qv===c?'active':'')+'" onclick="setClaimPreset(\''+escAttr(c)+'\')"><span class="num">'+(i+1)+'</span><span>'+esc(c)+'</span></button>'}).join('')}
+function setClaimPreset(text){$('queryInput').value=text;renderClaimPresets();updateMismatchUI();toast('Claim loaded')}
+function applySeatFromLibrary(key){var preset=personas[key].preset;var existing=seats.some(function(s){return s.presetKey===preset});if(existing){toast(personas[key].name+' is already selected');return}addSeat(preset);toast(personas[key].name+' seat added')}
+function renderDock(){$('dock').innerHTML=Object.entries(personas).map(function(e){var key=e[0],p=e[1];var selected=seats.some(function(s){return s.presetKey===p.preset});return '<button class="seat-tab '+(selected?'selected':'')+'" onclick="applySeatFromLibrary(\''+key+'\')">'+icons[key]+'<span><strong>'+p.name+'</strong><span>'+p.sub+'</span><small>'+(selected?'Selected':'Add to review')+'</small></span></button>'}).join('')}
+function getCorpus(){var corpus=STATUTORY_CORPUS.map(function(c){return Object.assign({},c,{fromUpload:false})});if(uploadedText){uploadedText.split(/\n\s*\n|\n/).map(function(x){return x.trim()}).filter(function(x){return x.length>50}).slice(0,18).forEach(function(chunk,i){corpus.push({id:'record-'+i,source:'record',text:chunk.slice(0,900),fromUpload:true})})}return corpus}
+function addSeat(presetKey){if(!presetKey)presetKey='justice';var id=seatCounter++;seats.push({id:id,presetKey:presetKey,perspective:PRESETS[presetKey]||''});renderSeats();renderDock();setProgress(Object.keys(seatResults).length,seats.length)}
+function pickRecord(key){
+  activeSample=key;
+  var sample=SAMPLES[activeSample];
+  uploadedText=sample.text;
+  $('uploadedName').textContent=sample.name;
+  $('uploadZone').style.display='none';
+  document.querySelectorAll('.rec-opt').forEach(function(b){b.classList.toggle('active',b.dataset.key===activeSample)});
+  seatResults={};lastEvidence=[];renderSeats();renderEvidence();setProgress(0,seats.length);
+  updateMismatchUI();
+  toast('Loaded '+sample.name);
+}
+function renderSeats(){$('seatsGrid').innerHTML=seats.map(function(s){var key=personaKeyForPreset(s.presetKey),p=personas[key],r=seatResults[s.id],score=r?Math.max(0,Math.min(1,r.topScore)):null,status=r?'Complete':'Ready',pct=score===null?0:Math.round(score*100);return '<article class="result-card"><div><div class="result-topline"><div class="result-title">'+icons[key]+'<div><h3>'+p.name+'</h3><p>'+p.question+'</p></div></div><span class="badge '+(r?'complete':'')+'">'+status+'</span></div><div class="scoreline"><div class="score">'+(score===null?'\u2014':score.toFixed(2))+'</div><div class="score-label">Coherence Score</div></div><div class="scorebar"><span style="--w:'+pct+'%"></span></div></div><div class="card-foot"><div class="analysis-state">'+(r?'Analysis complete':'Awaiting run')+'</div><button class="details-btn" onclick="openSeatEvidence('+s.id+')">View details</button></div></article>'}).join('')+(seats.length<7?'<div class="empty-seat"><div><b>Add another seat</b><span>Use the seat library above.</span></div></div>':'')}
+function setRunning(isRunning){var b=$('runAllBtn');if(isRunning){b.dataset.label=b.textContent;b.textContent='Running';b.disabled=true;b.classList.add('loading')}else{b.textContent=b.dataset.label||'Run All Seats';b.disabled=false;b.classList.remove('loading')}$('progressRow').classList.toggle('running',isRunning)}
+function setProgress(done,total){$('runCount').textContent=done+' of '+total+' seats complete';$('progressFill').style.width=total?Math.round((done/total)*100)+'%':'0%';$('runLabel').textContent=done===total&&total?'Run complete':(done?'Run All Seats in progress\u2026':'Ready to run selected seats')}
+function runAllSeats(){var query=$('queryInput').value.trim();if(!query)return toast('Enter a claim or hypothesis');if(!uploadedText)return toast('Load a record first');if(!seats.length)return toast('Add at least one seat');setRunning(true);setAPI('running','Live API running');setProgress(0,seats.length);showDissent=false;focusedSeatId=null;$('dissentToggle').textContent='Show Dissenting';var corpus=getCorpus(),candidates=corpus.map(function(c){return c.text});seatResults={};lastEvidence=[];renderEvidence();(async function(){for(var i=0;i<seats.length;i++){var seat=seats[i];var fullQuery='From the perspective of: '+seat.perspective+'\n\nMunicipal claim or hypothesis to evaluate: '+query;try{var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:fullQuery,candidates:candidates})});if(!r.ok)throw new Error('HTTP '+r.status);var data=await r.json();var raw=data.all||data.top||[];if(!raw.length)throw new Error('No scored candidates returned');var scored=raw.map(function(x){var idx=corpus.findIndex(function(c){return c.text===x.text});var c=corpus[idx]||{};return {text:x.text,score:Number(x.score),source:c.source||'record',corpusId:c.id||'unknown',corpusIndex:idx,fromUpload:!!c.fromUpload,seatId:seat.id,seatLabel:labelForPreset(seat.presetKey)}}).filter(function(x){return Number.isFinite(x.score)}).sort(function(a,b){return b.score-a.score});seatResults[seat.id]={topScore:scored[0]?scored[0].score:0,results:scored,live:true};lastEvidence.push.apply(lastEvidence,scored.slice(0,4));setProgress(i+1,seats.length);renderSeats()}catch(e){setAPI('error','Live API error');toast('Live API error: '+e.message);setRunning(false);return}}lastEvidence.sort(function(a,b){return b.score-a.score});renderSeats();renderEvidence();setAPI('','Live API connected');$('updatedLabel').textContent='Updated now';toast('Live Arbiter analysis complete');setRunning(false)})()}
+
+function renderEvidence(){var filterVal=$('sourceFilter').value;var baseList=showDissent?getDissentEvidence():lastEvidence;var filtered=filterVal==='All Sources'?baseList:baseList.filter(function(x){return x.source===filterVal});var total=filtered.length,rows=filtered.slice(0,8);if(showDissent){$('evTitleH2').textContent='Dissenting Passages';$('evTitleP').textContent='Lowest-scoring passages per seat \u2014 what did not match.'}else{$('evTitleH2').textContent='Grounding in Record';$('evTitleP').textContent='Top evidence supporting the selected claim across the record.'}$('showMoreBtn').classList.toggle('hidden-more',total<=8);if(!rows.length){$('evidenceRows').innerHTML='<tr><td colspan="5"><div class="empty-evidence"><b>No scored evidence yet.</b><span>Load a record, choose seats, then run the live Arbiter API.</span></div></td></tr>';window.__evidenceRows=[];$('detailsDrawer').classList.remove('open');$('detailsDrawer').innerHTML='';return}var cohClass=showDissent?'coh-low':'coh';$('evidenceRows').innerHTML=rows.map(function(x,i){var sl=sourceLabel(x);var sc=sourceClass(x.source);return '<tr onclick="openEvidence('+i+')"><td class="rank">'+(i+1)+'</td><td><div class="source-cell"><span class="source-badge '+sc+'">'+esc(x.source)+'</span><div><div class="source-title">'+esc(sl.title)+'</div><div class="source-page">'+esc(sl.sub)+'</div></div></div></td><td><div class="excerpt">'+esc(x.text.slice(0,190))+(x.text.length>190?'\u2026':'')+'</div></td><td class="'+cohClass+'">'+Number(x.score).toFixed(2)+'</td><td><button class="open-record" onclick="event.stopPropagation();openEvidence('+i+')">Inspect</button></td></tr>'}).join('');window.__evidenceRows=rows}
+function openEvidence(i){var x=(window.__evidenceRows||[])[i];if(!x)return;var d=$('detailsDrawer');d.classList.add('open');var sl=sourceLabel(x);d.innerHTML='<div class="drawer-grid"><div class="drawer-meta"><b>Corpus location</b><br>Source type: '+esc(x.source)+'<br>Origin: '+esc(sl.title)+'<br>Identifier: '+esc(sl.sub)+'<br>Corpus ID: '+esc(x.corpusId)+'<br>Corpus index: '+x.corpusIndex+'<br>Score: '+Number(x.score).toFixed(6)+'<br>Threshold: '+currentThreshold.toFixed(2)+'</div><div class="drawer-passage"><b>Full matched passage</b><br><br>'+esc(x.text)+'</div></div>';d.scrollIntoView({behavior:'smooth',block:'nearest'})}
+
+function openSeatEvidence(id){var r=seatResults[id];if(!r)return toast('Run seats first');lastEvidence=r.results;focusedSeatId=id;var isBelow=(r.topScore||0)<currentThreshold;showDissent=isBelow;$('dissentToggle').textContent=showDissent?'Show Top Evidence':'Show Dissenting';renderEvidence();var d=$('detailsDrawer');if(isBelow&&r.results.length>3){var bottom3=r.results.slice(-3).reverse();var sObj=seats.find(function(s){return s.id===id});var key=sObj?personaKeyForPreset(sObj.presetKey):'justice';d.classList.add('open');d.innerHTML='<div style="margin-bottom:10px;font-size:13px;font-weight:600;color:var(--bad)">'+esc(personas[key].name)+' \u2014 lowest-scoring passages (below '+currentThreshold.toFixed(2)+' threshold)</div>'+bottom3.map(function(x){var sl=sourceLabel(x);return '<div style="border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px;background:var(--bg)"><div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:6px">'+esc(sl.title)+' &middot; score '+Number(x.score).toFixed(3)+'</div><div style="font-size:12px;color:#48505b;line-height:1.45">'+esc(x.text)+'</div></div>'}).join('')}else{d.classList.remove('open');d.innerHTML=''}$('evidencePanel').scrollIntoView({behavior:'smooth',block:'start'})}
+
+function exportReport(){
+  if(!Object.keys(seatResults).length)return toast('Run comparison first');
+  var query=$('queryInput').value,generated=new Date().toLocaleString(),recordName=$('uploadedName').textContent||'Sample record';
+  var runSeats=seats.map(function(s,i){return {seat:s,index:i+1,result:seatResults[s.id]||{topScore:0,results:[]},label:labelForPreset(s.presetKey)}});
+  var sorted=runSeats.slice().sort(function(a,b){return b.result.topScore-a.result.topScore}),top=sorted[0],bottom=sorted[sorted.length-1];
+  var avg=runSeats.reduce(function(sum,x){return sum+(x.result.topScore||0)},0)/Math.max(runSeats.length,1),min=Math.min.apply(null,runSeats.map(function(x){return x.result.topScore||0})),max=Math.max.apply(null,runSeats.map(function(x){return x.result.topScore||0}));
+  var evidence=lastEvidence.slice().sort(function(a,b){return b.score-a.score}).slice(0,12);
+  function pct(s){return Math.round(Math.max(0,Math.min(1,s))*100)}
+  function scoreClass(s){return s>=currentThreshold?'pass':'watch'}
+  function verdict(s){return s>=currentThreshold?'COHERENT':'REVIEW'}
+  var weakSeats=sorted.filter(function(x){return (x.result.topScore||0)<currentThreshold});
+  var allPass=weakSeats.length===0;
+  var verdictText=allPass?'Claim coherent across all seats at threshold '+currentThreshold.toFixed(2)+'. No seat scored below threshold.':weakSeats.length+' of '+runSeats.length+' seats scored below the '+currentThreshold.toFixed(2)+' threshold: '+weakSeats.map(function(x){return x.label}).join(', ')+'. Review flagged seats.';
+  var mismatchResult=checkMismatch(query,uploadedText||'');
+  var mismatchSection=mismatchResult?'<div class="notice" style="background:var(--badSoft);border-color:var(--bad);color:var(--bad);margin-top:14px"><b>Record-Claim Alignment Notice</b><br>'+esc(mismatchResult)+' Interpret below-threshold scores with caution \u2014 they may reflect document mismatch rather than genuine claim weakness.</div>':'';
+  var strength=avg>=0.75?'strong':avg>=0.65?'moderate':'weak';
+  var topPassage=top.result.results&&top.result.results[0]?top.result.results[0]:null;
+  var resolutionParts=[];
+  resolutionParts.push('This achieves an average coherence score of '+avg.toFixed(2)+' across '+runSeats.length+' seats against '+recordName+', indicating '+strength+' semantic grounding in the record.');
+  if(topPassage){var anchor=topPassage.text.length>140?topPassage.text.slice(0,140)+'\u2026':topPassage.text;resolutionParts.push('The strongest alignment came through the '+top.label+' perspective (score '+Number(top.result.topScore).toFixed(2)+'), anchored to the passage: \u201C'+anchor+'\u201D')}
+  if(weakSeats.length){
+    var weakNames=weakSeats.map(function(x){return x.label});
+    var lastW=weakNames.pop();
+    var weakList=weakNames.length?weakNames.join(', ')+' and '+lastW:lastW;
+    resolutionParts.push('The '+weakList+' perspective'+(weakSeats.length>1?'s':'')+' scored below the '+currentThreshold.toFixed(2)+' threshold, meaning the record provides limited direct support for the claim from those civic viewpoints.');
+    weakSeats.forEach(function(ws){
+      var allR=ws.result.results||[];
+      if(!allR.length)return;
+      var lowest=allR[allR.length-1];
+      if(lowest){var lowQuote=lowest.text.length>100?lowest.text.slice(0,100)+'\u2026':lowest.text;resolutionParts.push('For '+ws.label+', the lowest-scoring passage (score '+Number(lowest.score).toFixed(2)+') was: \u201C'+lowQuote+'\u201D')}
+    });
+  }else{
+    resolutionParts.push('No seat fell below the '+currentThreshold.toFixed(2)+' threshold \u2014 the claim finds at least moderate semantic support from every civic perspective tested.');
   }
-  const t0 = performance.now();
-  try{
-    document.getElementById('loading-count').textContent = `${docs.length} passages → filtering...`;
-    const results = await compareClaim(claim, docs);
-    const ms = Math.round(performance.now() - t0);
-    renderResult(claim, results, ms, docs.length, false);
-    saveCache(ckey, { results: results.map(r => ({
-      docId: r.doc.id, docTitle: r.doc.title, docBody: r.doc.body, chunk: r.chunk, score: r.score,
-      cat: r.hit.cat, source: r.hit.source, meta: r.doc.meta
-    })), ms });
-  } catch(e){
-    resultEl.innerHTML = `<div class="err">${esc(e.message)}</div>`;
-    resultEl.classList.add('on');
-  } finally {
-    loading.classList.remove('on');
+  var resolutionText=resolutionParts.join(' ');
+  var seatRows=sorted.map(function(x,i){return '<tr><td class="mono">'+String(i+1).padStart(2,'0')+'</td><td>'+esc(x.label)+'</td><td class="mono score">'+Number(x.result.topScore).toFixed(3)+'</td><td><div class="rail"><span style="width:'+pct(x.result.topScore)+'%"></span></div></td><td class="mono">'+verdict(x.result.topScore)+'</td></tr>'}).join('');
+  var findings=sorted.slice(0,3).map(function(x,i){var ev=x.result.results&&x.result.results[0]?x.result.results[0]:null;return '<article class="finding-card"><div class="finding-num">'+String(i+1).padStart(2,'0')+'</div><div><h3>'+esc(x.label)+' perspective is '+verdict(x.result.topScore).toLowerCase()+'</h3><p>'+(ev?esc(ev.text.slice(0,240))+'\u2026':'No passage returned.')+'</p><div class="finding-meta"><span>COHERENCE</span><b>'+Number(x.result.topScore).toFixed(2)+'</b></div></div></article>'}).join('');
+  var evidenceRows=evidence.map(function(x,i){var sl=sourceLabel(x);return '<tr><td class="mono">'+esc(x.corpusId)+'</td><td class="mono score">'+Number(x.score).toFixed(3)+'</td><td>'+esc(x.seatLabel||'Seat')+'</td><td><b>'+esc(x.source)+'</b><br><span>'+esc(sl.title)+' &middot; '+esc(sl.sub)+'</span></td><td>'+esc(x.text)+'</td></tr>'}).join('');
+  var passageIds=new Set(),dupes=[];evidence.forEach(function(x){if(passageIds.has(x.corpusId))dupes.push(x.corpusId);passageIds.add(x.corpusId)});
+  var dupeNotice=dupes.length?'<div class="notice">'+dupes.length+' passage'+(dupes.length>1?'s':'')+' grounded across multiple seats: '+Array.from(new Set(dupes)).map(function(id){return '<code>'+esc(id)+'</code>'}).join(', ')+'</div>':'';
+  var coverRail=sorted.map(function(x){var w=pct(x.result.topScore);var col=(x.result.topScore||0)>=currentThreshold?'var(--accent)':'var(--bad)';return '<div class="rail-row"><span class="rail-label">'+esc(x.label)+'</span><div class="rail-track"><div class="rail-fill" style="width:'+w+'%;background:'+col+'"></div></div><span class="rail-val">'+Number(x.result.topScore).toFixed(2)+'</span></div>'}).join('');
+  var seatSections=runSeats.map(function(x){return '<section class="page-section break-avoid"><div class="accent-bar"></div><div class="section-head"><div><div class="kicker">SEAT ANALYSIS</div><h2>'+esc(x.label)+'</h2></div><div class="section-score '+scoreClass(x.result.topScore)+'">'+Number(x.result.topScore).toFixed(3)+'</div></div><div class="perspective"><span class="pers-kicker">Perspective</span>'+esc(x.seat.perspective)+'</div><table><thead><tr><th>Rank</th><th>Score</th><th>Source</th><th>Matched corpus passage</th></tr></thead><tbody>'+x.result.results.slice(0,5).map(function(r,idx){var sl=sourceLabel(r);return '<tr><td class="mono">'+(idx+1)+'</td><td class="mono score">'+Number(r.score).toFixed(3)+'</td><td><b>'+esc(r.source)+'</b><br><span>'+esc(sl.title)+' &middot; '+esc(sl.sub)+'</span></td><td>'+esc(r.text)+'</td></tr>'}).join('')+'</tbody></table></section>'}).join('');
+  var dissentExport='';
+  if(weakSeats.length){
+    var dissentRows='';
+    weakSeats.forEach(function(x){var allR=x.result.results||[];var bottom3=allR.slice(-3).reverse();bottom3.forEach(function(r){var sl=sourceLabel(r);dissentRows+='<tr><td class="mono">'+esc(x.label)+'</td><td class="mono" style="color:var(--bad);font-weight:700">'+Number(r.score).toFixed(3)+'</td><td><b>'+esc(r.source)+'</b><br><span>'+esc(sl.title)+' &middot; '+esc(sl.sub)+'</span></td><td>'+esc(r.text)+'</td></tr>'})});
+    dissentExport='<section class="page"><div class="brand-bar"><div class="brand-mark"></div><span class="brand-name">Arbiter</span><span class="brand-tag">Municipal</span></div><div class="page-body"><div class="accent-bar" style="background:var(--bad)"></div><div class="kicker" style="color:var(--bad)">Dissenting Passages</div><h2>What Did Not Match</h2><p class="sub">Lowest-scoring corpus passages for seats below the '+currentThreshold.toFixed(2)+' threshold.</p><table><thead><tr><th>Seat</th><th>Score</th><th>Source</th><th>Passage</th></tr></thead><tbody>'+dissentRows+'</tbody></table></div><div class="page-foot"><span>deterministic</span><span>threshold '+currentThreshold.toFixed(2)+'</span></div></section>';
   }
+
+  var html='<!doctype html><html><head><title>Arbiter Municipal Report</title>'
++'<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">'
++'<style>'
++':root{--accent:#2f63d8;--accentSoft:rgba(47,99,216,.105);--bg:#fbfbf8;--sf:#fff;--ink:#0a0b0d;--muted:#626a75;--dim:#8b93a0;--line:rgba(15,22,32,.12);--line2:rgba(15,22,32,.20);--good:#2d8b55;--goodSoft:rgba(45,139,85,.12);--bad:#a64242;--badSoft:rgba(166,66,66,.09);--sans:"Inter",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;--serif:"Libre Baskerville",Georgia,serif;--mono:"IBM Plex Mono",monospace}'
++'*{box-sizing:border-box;margin:0;padding:0}'
++'body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}'
++'body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 78% 0%,rgba(47,99,216,.06),transparent 28%),linear-gradient(180deg,#fff 0%,#fbfbf8 42%,#f6f6f1 100%)}'
++'body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.28;background-image:radial-gradient(rgba(0,0,0,.045) .55px,transparent .55px);background-size:3px 3px}'
++'.stage{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:32px}'
++'.page{position:relative;background:var(--sf);border:1px solid var(--line);border-radius:12px;box-shadow:0 22px 68px rgba(20,28,40,.08);margin-bottom:24px;overflow:hidden}.page>*{position:relative;z-index:1}'
++'.brand-bar{height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:13px;padding:0 28px;background:rgba(251,251,248,.92)}'
++'.brand-mark{width:28px;height:28px;position:relative;display:grid;place-items:center;flex:none}'
++'.brand-mark::before{content:"";width:22px;height:22px;background:linear-gradient(135deg,#07080a 0%,#07080a 62%,var(--accent) 100%);clip-path:polygon(50% 0,58% 34%,100% 50%,58% 66%,50% 100%,42% 66%,0 50%,42% 34%)}'
++'.brand-mark::after{content:"";position:absolute;width:4px;height:4px;border-radius:50%;background:#fff}'
++'.brand-name{font-size:18px;font-weight:720;letter-spacing:-.04em}.brand-tag{font-weight:420;color:#66707c;font-size:14px;margin-left:1px}.brand-right{margin-left:auto;display:flex;align-items:center;gap:12px}'
++'.api-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;background:#fff;padding:6px 12px;font-family:var(--mono);font-size:9px;text-transform:uppercase;color:#69717c}.api-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--good)}'
++'.cover{padding:40px 36px;display:grid;grid-template-columns:1fr 280px;gap:36px;align-items:start}'
++'.title-block h1{font-family:var(--serif);font-size:36px;line-height:1.1;letter-spacing:-.035em;font-weight:700}.title-block p{color:var(--muted);font-size:14px;margin-top:10px;max-width:520px}'
++'.kicker{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:10px}'
++'.claim-text{font-family:var(--serif);font-size:18px;line-height:1.4;margin-top:12px;color:var(--ink);word-break:break-word;overflow-wrap:break-word}'
++'.meta-grid{display:grid;grid-template-columns:1fr repeat(4,minmax(0,80px));border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:28px}'
++'.meta-cell{padding:12px 14px;border-right:1px solid var(--line)}.meta-cell:last-child{border-right:0}'
++'.meta-cell small{display:block;font-family:var(--mono);font-size:8px;text-transform:uppercase;color:var(--dim);letter-spacing:.06em;margin-bottom:6px}'
++'.meta-cell b{display:block;font-family:var(--mono);font-size:11px;color:var(--ink);font-weight:500;word-break:break-word}'
++'.rail-viz{border:1px solid var(--line);border-radius:10px;padding:18px 20px;background:var(--bg)}.rail-viz-title{font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:14px}'
++'.rail-row{display:grid;grid-template-columns:72px 1fr 42px;gap:8px;align-items:center;padding:5px 0}.rail-row+.rail-row{border-top:1px solid var(--line)}'
++'.rail-label{font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rail-track{height:6px;background:var(--line);border-radius:999px;overflow:hidden}.rail-fill{height:100%;border-radius:999px}.rail-val{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right;color:var(--ink)}'
++'.page-body{padding:28px 36px}.accent-bar{width:56px;height:3px;background:var(--accent);margin-bottom:20px;border-radius:2px}'
++'.page-body h2{font-family:var(--serif);font-size:22px;letter-spacing:-.02em;font-weight:700;margin-bottom:6px}.page-body>.sub{font-size:12px;color:var(--muted);margin-bottom:20px}'
++'.summary-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}.summary-text{font-size:13px;color:#3d434c;line-height:1.55;max-width:580px;word-break:break-word}'
++'.verdict-line{margin-top:14px;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:600}.verdict-line.pass{background:var(--goodSoft);color:var(--good)}.verdict-line.fail{background:var(--badSoft);color:var(--bad)}'
++'.resolution-block{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:13px;line-height:1.55;color:#303944;word-break:break-word}'
++'.resolution-block .res-kicker{display:block;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600;margin-bottom:8px}'
++'.resolution-block .res-claim{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--ink);margin-bottom:10px}'
++'.metric-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--line);border-radius:8px;overflow:hidden;margin-top:20px;border:1px solid var(--line)}.metric{background:var(--sf);padding:14px}.metric small{font-family:var(--mono);font-size:8px;text-transform:uppercase;color:var(--dim);letter-spacing:.06em}.metric b{display:block;font-family:var(--serif);font-size:28px;margin-top:6px;color:var(--accent);font-weight:700}'
++'.finding-stack{display:grid;gap:10px}.finding-card{border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:14px;display:grid;grid-template-columns:30px 1fr;gap:10px}.finding-num{font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:700;display:grid;place-items:center}.finding-card h3{font-size:11px;text-transform:uppercase;letter-spacing:.03em;font-weight:700;margin:0 0 6px}.finding-card p{font-size:11px;color:var(--muted);margin:0;line-height:1.4;word-break:break-word}.finding-meta{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:10px;padding-top:7px;font-family:var(--mono);font-size:9px;color:var(--dim)}.finding-meta b{color:var(--accent);font-size:12px}'
++'.notice{font-family:var(--mono);font-size:9px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin-top:12px;line-height:1.5}.notice code{background:var(--accentSoft);color:var(--accent);padding:1px 5px;border-radius:3px;font-size:8px}'
++'table{width:100%;border-collapse:collapse;font-size:11px}th{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);text-align:left;font-weight:600;border-bottom:1px solid var(--line2);padding:9px 10px}td{border-bottom:1px solid var(--line);padding:10px;vertical-align:top;word-break:break-word;overflow-wrap:break-word}tr:hover td{background:rgba(47,99,216,.02)}'
++'.mono{font-family:var(--mono)}.score{color:var(--accent);font-weight:700}.rail{width:120px;height:4px;background:#e6e8ed;border-radius:999px;overflow:hidden}.rail span{display:block;height:100%;background:var(--accent);border-radius:999px}'
++'.section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:14px}.section-score{border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:10px 14px;font-family:var(--mono);font-size:20px;font-weight:700}.section-score.pass{color:var(--good)}.section-score.watch{color:var(--bad)}'
++'.perspective{background:var(--bg);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 14px;margin:10px 0 16px;font-size:12px;color:#48505b;line-height:1.5;word-break:break-word}.pers-kicker{display:block;margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);font-family:var(--mono);font-weight:600}'
++'.page-foot{display:flex;justify-content:space-between;gap:16px;padding:12px 36px;border-top:1px solid var(--line);font-family:var(--mono);font-size:9px;color:var(--dim)}.provenance-note{font-size:10px;color:var(--dim);margin-bottom:12px;font-style:italic}'
++'@page{margin:.4in}@media print{body{background:#fff!important}body::before,body::after{display:none}.stage{padding:0;max-width:none}.page{box-shadow:none;border:0;margin:0 0 20px;page-break-after:always;border-radius:0}.page:last-child{page-break-after:auto}.break-avoid{break-inside:avoid}.rail-viz{break-inside:avoid}.claim-text{max-width:100%!important}}'
++'@media(max-width:860px){.stage{padding:16px}.cover,.summary-grid{grid-template-columns:1fr}.meta-grid{grid-template-columns:1fr 1fr}.metric-row{grid-template-columns:1fr}}'
++'</style></head><body>'
++'<div class="stage">'
++'<section class="page"><div class="brand-bar"><div class="brand-mark"></div><span class="brand-name">Arbiter</span><span class="brand-tag">Municipal</span><div class="brand-right"><span class="api-pill">Live API</span></div></div>'
++'<div class="cover"><div><div class="title-block"><div class="kicker">Deterministic Coherence Report</div><h1>Public Record<br>Evaluation</h1><p>Evaluate one public record across seven civic seats. Every score traced to the exact corpus passage behind it.</p></div><div style="margin-top:32px"><div class="kicker">Claim / Hypothesis</div><div class="claim-text">'+esc(query)+'</div></div><div class="meta-grid"><div class="meta-cell" style="grid-column:span 1"><small>Record</small><b>'+esc(recordName)+'</b></div><div class="meta-cell"><small>Threshold</small><b>'+currentThreshold.toFixed(2)+'</b></div><div class="meta-cell"><small>Seats</small><b>'+runSeats.length+'</b></div><div class="meta-cell"><small>Generated</small><b>'+esc(generated)+'</b></div><div class="meta-cell"><small>Endpoint</small><b>/public/compare</b></div></div></div><div class="rail-viz"><div class="rail-viz-title">Seat coherence rail</div>'+coverRail+'<div style="margin-top:10px;font-family:var(--mono);font-size:8px;color:var(--dim);text-align:center">deterministic &middot; same input &rarr; same output &rarr; same score</div></div></div></section>'
++'<section class="page"><div class="brand-bar"><div class="brand-mark"></div><span class="brand-name">Arbiter</span><span class="brand-tag">Municipal</span></div><div class="page-body"><div class="accent-bar"></div><div class="kicker">Executive Summary</div><h2>Analysis Overview</h2><p class="sub">Scores reflect semantic proximity between the claim (as viewed through each seat\'s perspective) and passages in the combined corpus.</p><div class="summary-grid"><div><p class="summary-text">This report presents a deterministic coherence evaluation of the claim against the loaded public record. Each seat applies a distinct civic perspective, then ranks corpus passages through Arbiter\'s live compare endpoint.</p>'
++'<div class="verdict-line '+(allPass?'pass':'fail')+'">'+esc(verdictText)+'</div>'
++mismatchSection
++'<div class="resolution-block"><span class="res-kicker">Claim Resolution</span><span class="res-claim">\u201C'+esc(query)+'\u201D</span>'+esc(resolutionText)+'</div>'
++'<div class="metric-row"><div class="metric"><small>Top Seat</small><b>'+esc(top.label)+'</b></div><div class="metric"><small>Top Score</small><b>'+Number(top.result.topScore).toFixed(2)+'</b></div><div class="metric"><small>Average</small><b>'+avg.toFixed(2)+'</b></div></div>'
++'<table style="margin-top:16px"><thead><tr><th>Seat</th><th>Coherence</th><th>Rail</th><th>Status</th></tr></thead><tbody>'+seatRows+'</tbody></table></div><div><div class="kicker" style="margin-bottom:10px">Coherent Findings</div><div class="finding-stack">'+findings+'</div>'+dupeNotice+'</div></div></div><div class="page-foot"><span>deterministic &middot; live /public/compare</span><span>Range '+min.toFixed(2)+' \u2013 '+max.toFixed(2)+' &middot; threshold '+currentThreshold.toFixed(2)+'</span></div></section>'
++'<section class="page"><div class="brand-bar"><div class="brand-mark"></div><span class="brand-name">Arbiter</span><span class="brand-tag">Municipal</span></div><div class="page-body"><div class="accent-bar"></div><div class="kicker">Evidence</div><h2>Top Grounding Passages</h2><p class="provenance-note">Corpus IDs reflect actual passage identifiers in the combined corpus. No fabricated document references.</p><table><thead><tr><th>Corpus ID</th><th>Score</th><th>Seat</th><th>Source</th><th>Matched passage</th></tr></thead><tbody>'+evidenceRows+'</tbody></table></div><div class="page-foot"><span>deterministic &middot; live /public/compare</span><span>'+esc(API)+'</span></div></section>'
++dissentExport
++' '+seatSections
++'</div></body></html>';
+  var w=window.open('','_blank');w.document.write(html);w.document.close();setTimeout(function(){w.print()},450)
 }
-function go(){ const q = document.getElementById('q').value.trim(); if(q && CORPUS.length) runClaim(q); }
-function invertClaim(c){ 
-  const swaps = [['was not','was'],['was','was not'],['cannot','can'],['can','cannot'],['strongest','weakest'],['weakest','strongest'],['viable','not viable'],['not viable','viable']];
-  for(const [a,b] of swaps) if(c.toLowerCase().includes(a)) return c.replace(new RegExp(a,'i'), b);
-  return 'It is not true that ' + c.charAt(0).toLowerCase() + c.slice(1);
-}
-function invertAndSearch(){ const q = document.getElementById('q').value || (lastRanked[0]?.chunk || ''); if(q) runClaim(invertClaim(q)); }
-function searchStrongestCounter(){ if(lastRanked.length>1) runClaim(lastRanked[1].chunk); }
-function showFullDoc(doc){
-  currentDoc = doc;
-  document.getElementById('doc-title').innerText = doc.title || 'Source';
-  document.getElementById('doc-paper').innerHTML = esc(doc.body || '');
-  document.getElementById('doc-modal').classList.add('on');
-}
-function closeDoc(){ document.getElementById('doc-modal').classList.remove('on'); }
-function newSearch(){ document.getElementById('q').value = ''; document.getElementById('result').classList.remove('on'); document.getElementById('sugs').style.display = 'block'; setFilter('all'); window.scrollTo(0,0); }
-function scrollToSearch(){ document.getElementById('search-section').scrollIntoView({behavior:'smooth'}); }
-document.getElementById('logo').addEventListener('click', () => newSearch());
-loadCorpus();
+
+function processFile(file){$('uploadedName').textContent=file.name;(async function(){try{var text='';if(file.name.toLowerCase().endsWith('.pdf')&&window.pdfjsLib){var buf=await file.arrayBuffer();var pdf=await pdfjsLib.getDocument({data:buf}).promise;for(var i=1;i<=pdf.numPages;i++){var page=await pdf.getPage(i);var tc=await page.getTextContent();text+=tc.items.map(function(item){return item.str}).join(' ')+'\n'}}else{text=await file.text()}uploadedText=text;activeSample='custom';$('uploadZone').style.display='grid';document.querySelectorAll('.rec-opt').forEach(function(b){b.classList.remove('active')});seatResults={};lastEvidence=[];renderSeats();renderEvidence();setProgress(0,seats.length);updateMismatchUI();toast('Loaded '+text.length.toLocaleString()+' chars')}catch(e){toast('File error: '+e.message)}})()}
+ $('uploadZone').onclick=function(){$('fileInput').click()};
+ $('fileInput').onchange=function(e){if(e.target.files[0])processFile(e.target.files[0])};
+ $('uploadZone').ondragover=function(e){e.preventDefault();$('uploadZone').style.borderColor='var(--accent)'};
+ $('uploadZone').ondragleave=function(){$('uploadZone').style.borderColor=''};
+ $('uploadZone').ondrop=function(e){e.preventDefault();$('uploadZone').style.borderColor='';if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0])};
+ $('thresholdSlider').oninput=function(e){currentThreshold=e.target.value/100;$('thresholdValue').textContent=currentThreshold.toFixed(2);renderEvidence()};
+ $('runAllBtn').onclick=runAllSeats;
+ $('exportReportBtn').onclick=exportReport;
+ $('viewEvidenceBtn').onclick=function(){toast('Evidence drawer is inline below the table')};
+ $('showMoreBtn').onclick=function(){toast(lastEvidence.length>8?((lastEvidence.length-8)+' more evidence rows available in export'):'No more evidence to show')};
+ $('sourceFilter').onchange=renderEvidence;
+ $('dissentToggle').onclick=function(){showDissent=!showDissent;focusedSeatId=null;this.textContent=showDissent?'Show Top Evidence':'Show Dissenting';renderEvidence()};
+ $('queryInput').oninput=function(){renderClaimPresets();updateMismatchUI()};
+ $('queryInput').value=CLAIM_PRESETS[0];
+ $('uploadedName').textContent='CEQA Sample: La Jolla Coastal Access MND';
+renderClaimPresets();
+updateMismatchUI();
+addSeat('justice');addSeat('environment');addSeat('resident');
+renderDock();renderSeats();renderEvidence();setProgress(0,seats.length);
 </script>
 </body>
 </html>
